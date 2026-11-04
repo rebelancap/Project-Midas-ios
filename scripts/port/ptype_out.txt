@@ -1,0 +1,1097 @@
+==== GuardRecord
+/* offset      |    size */  type = struct GuardRecord {
+/*      0      |       4 */    struct PropDefHeaderRecord {
+/*      0      |       2 */        u16 extrascale;
+/*      2      |       1 */        u8 state;
+/*      3      |       1 */        u8 type;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      4      |       2 */    u16 chrnum;
+/*      6      |       2 */    u16 PadID;
+/*      8      |       2 */    u16 BodyID;
+/*     10      |       2 */    u16 AIListID;
+/*     12      |       2 */    u16 Preset;
+/*     14      |       2 */    u16 chrpreset1;
+/*     16      |       2 */    u16 health;
+/*     18      |       2 */    u16 ReactionTime;
+/*     20      |       2 */    u16 bitflags;
+/*     22      |       2 */    s16 HeadID;
+/*     24      |       4 */    ChrRecord *Data;
+
+                               /* total size (bytes):   28 */
+                             }
+==== DoorRecord
+/* offset      |    size */  type = struct DoorRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |       4 */    s32 linkedDoorOffset;
+/*    132      |       4 */    f32 maxFrac;
+/*    136      |       4 */    f32 perimFrac;
+/*    140      |       4 */    f32 accel;
+/*    144      |       4 */    f32 decel;
+/*    148      |       4 */    f32 maxSpeed;
+/*    152      |       2 */    u16 doorFlags;
+/*    154      |       2 */    u16 doorType;
+/*    156      |       4 */    u32 keyflags;
+/*    160      |       4 */    u32 autoCloseFrames;
+/*    164      |       4 */    u32 doorOpenSound;
+/*    168      |       4 */    f32 frac;
+/*    172      |       4 */    f32 unkac;
+/*    176      |       4 */    f32 unkb0;
+/*    180      |       4 */    f32 openPosition;
+/*    184      |       4 */    f32 speed;
+/*    188      |       1 */    s8 openstate;
+/*    189      |       1 */    s8 unkbd;
+/*    190      |       2 */    s16 calculatedopacity;
+/*    192      |       4 */    s32 TintDist;
+/*    196      |       2 */    s16 CullDist;
+/*    198      |       1 */    s8 soundType;
+/*    199      |       1 */    s8 fadeTime60;
+/*    200      |       4 */    struct DoorRecord *linkedDoor;
+/*    204      |       4 */    Vertex *unkcc;
+/*    208      |      28 */    struct ModelRoData_BoundingBoxRecord {
+/*    208      |       4 */        u32 ModelNumber;
+/*    212      |      24 */        struct bbox {
+/*    212      |      24 */            union {
+/*                    24 */                struct {
+/*    212      |       4 */                    float xmin;
+/*    216      |       4 */                    float xmax;
+/*    220      |       4 */                    float ymin;
+/*    224      |       4 */                    float ymax;
+/*    228      |       4 */                    float zmin;
+/*    232      |       4 */                    float zmax;
+
+                                               /* total size (bytes):   24 */
+                                           };
+/*                    24 */                struct {
+/*    212      |      12 */                    coord3d min;
+/*    224      |      12 */                    coord3d max;
+
+                                               /* total size (bytes):   24 */
+                                           };
+/*                    24 */                f32 f[3][2];
+/*                    24 */                f32 AsArray[6];
+
+                                           /* total size (bytes):   24 */
+                                       };
+
+                                       /* total size (bytes):   24 */
+                                   } Bounds;
+
+                                   /* total size (bytes):   28 */
+                               } bbox;
+/*    236      |       4 */    u32 openedTime;
+/*    240      |       4 */    s32 portalNumber;
+/*    244      |       4 */    ALSoundState *openSoundState;
+/*    248      |       4 */    ALSoundState *closeSoundState;
+/*    252      |       4 */    union {
+/*                     4 */        s32 lastcalc60i;
+/*                     4 */        f32 lastcalc60f;
+
+                                   /* total size (bytes):    4 */
+                               };
+
+                               /* total size (bytes):  256 */
+                             }
+==== GlobalDoorScaleRecord
+/* offset      |    size */  type = struct GlobalDoorScaleRecord {
+/*      0      |       4 */    struct PropDefHeaderRecord {
+/*      0      |       2 */        u16 extrascale;
+/*      2      |       1 */        u8 state;
+/*      3      |       1 */        u8 type;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      4      |       4 */    s32 Scale;
+
+                               /* total size (bytes):    8 */
+                             }
+==== ObjectRecord
+/* offset      |    size */  type = struct ObjectRecord {
+/*      0      |       4 */    struct PropDefHeaderRecord {
+/*      0      |       2 */        u16 extrascale;
+/*      2      |       1 */        u8 state;
+/*      3      |       1 */        u8 type;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      4      |       2 */    s16 obj;
+/*      6      |       2 */    s16 pad;
+/*      8      |       4 */    u32 flags;
+/*     12      |       4 */    u32 flags2;
+/*     16      |       4 */    PropRecord *prop;
+/*     20      |       4 */    Model *model;
+/*     24      |      64 */    Mtxf mtx;
+/*     88      |      12 */    coord3d runtime_pos;
+/*    100      |       4 */    union {
+/*                     4 */        u32 runtime_bitflags;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*    104      |       4 */    collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */    union {
+/*                     4 */        struct Projectile *projectile;
+/*                     4 */        struct Embedment *embedment;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*    112      |       4 */    f32 maxdamage;
+/*    116      |       4 */    f32 damage;
+/*    120      |       4 */    rgba_u8 shadecol;
+/*    124      |       4 */    rgba_u8 nextcol;
+
+                               /* total size (bytes):  128 */
+                             }
+==== GlassRecord
+MISSING GlassRecord
+==== TintedGlassRecord
+/* offset      |    size */  type = struct TintedGlassRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |       4 */    s32 TintDist;
+/*    132      |       4 */    s32 CullDist;
+/*    136      |       4 */    s32 calculatedopacity;
+/*    140      |       4 */    s32 portalnum;
+/*    144      |       4 */    f32 unk90;
+
+                               /* total size (bytes):  148 */
+                             }
+==== SafeRecord
+/* offset      |    size */  type = struct SafeRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |      12 */    coord3d normal;
+
+                               /* total size (bytes):  140 */
+                             }
+==== GasReleasingRecord
+MISSING GasReleasingRecord
+==== KeyRecord
+/* offset      |    size */  type = struct KeyRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |       4 */    union {
+/*                     1 */        s8 keyID;
+/*                     4 */        u32 keyflags;
+
+                                   /* total size (bytes):    4 */
+                               };
+
+                               /* total size (bytes):  132 */
+                             }
+==== CCTVRecord
+/* offset      |    size */  type = struct CCTVRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |       4 */    s32 lookpad;
+/*    132      |      64 */    Mtxf unk84;
+/*    196      |       4 */    f32 unkC4;
+/*    200      |       4 */    f32 unkC8;
+/*    204      |       4 */    f32 unkCC;
+/*    208      |       4 */    f32 unkD0;
+/*    212      |       4 */    s32 unkD4;
+/*    216      |       4 */    f32 unkD8;
+/*    220      |       4 */    f32 unkDC;
+/*    224      |       4 */    s32 timer;
+/*    228      |       4 */    s32 convert_to_f32;
+/*    232      |       4 */    f32 unkE8;
+/*    236      |       4 */    s32 unkEC;
+/*    240      |       4 */    s32 unkF0;
+/*    244      |       4 */    s32 unkF4;
+/*    248      |       4 */    s32 unkF8;
+
+                               /* total size (bytes):  252 */
+                             }
+==== AmmoCrateRecord
+/* offset      |    size */  type = struct AmmoCrateRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |       4 */    AMMOTYPE ammoType;
+
+                               /* total size (bytes):  132 */
+                             }
+==== WeaponObjRecord
+/* offset      |    size */  type = struct WeaponObjRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |       1 */    s8 weaponnum;
+/*    129      |       1 */    s8 LinkedWeaponType;
+/*    130      |       2 */    s16 timer;
+/*    132      |       4 */    struct WeaponObjRecord *dualweapon;
+
+                               /* total size (bytes):  136 */
+                             }
+==== MonitorObjRecord
+/* offset      |    size */  type = struct MonitorObjRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |     116 */    MonitorRecord Monitor;
+/*    244      |       4 */    s32 OwnerOffset;
+/*    248      |       4 */    s32 OwnerPart;
+/*    252      |       4 */    s32 ImageNum;
+
+                               /* total size (bytes):  256 */
+                             }
+==== MultiMonitorObjRecord
+/* offset      |    size */  type = struct MultiMonitorObjRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |     464 */    MonitorRecord Monitor[4];
+/*    592      |       4 */    u8 ImageNums[4];
+
+                               /* total size (bytes):  596 */
+                             }
+==== AutogunRecord
+/* offset      |    size */  type = struct AutogunRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |       4 */    s32 padID;
+/*    132      |       4 */    f32 rot_related;
+/*    136      |       4 */    f32 unk88;
+/*    140      |       4 */    f32 unk8C;
+/*    144      |       4 */    f32 unk90;
+/*    148      |       4 */    f32 unk94;
+/*    152      |       4 */    f32 unk98;
+/*    156      |       4 */    f32 unk9C;
+/*    160      |       4 */    f32 unkA0;
+/*    164      |       4 */    f32 speed;
+/*    168      |       4 */    f32 aimdist;
+/*    172      |       4 */    s32 unkAC;
+/*    176      |       4 */    f32 unkB0;
+/*    180      |       4 */    f32 unkB4;
+/*    184      |       4 */    s32 unkB8;
+/*    188      |       4 */    s32 unkBC;
+/*    192      |       4 */    s32 unkC0;
+/*    196      |       4 */    ALSoundState *unkC4;
+/*    200      |       4 */    ALSoundState *unkC8;
+/*    204      |       4 */    struct beam *beam;
+/*    208      |       4 */    s32 is_active;
+/*    212      |       4 */    f32 unkD4;
+
+                               /* total size (bytes):  216 */
+                             }
+==== LinkRecord
+/* offset      |    size */  type = struct LinkRecord {
+/*      0      |       4 */    struct PropDefHeaderRecord {
+/*      0      |       2 */        u16 extrascale;
+/*      2      |       1 */        u8 state;
+/*      3      |       1 */        u8 type;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      4      |       4 */    union {
+/*                     4 */        struct PropRecord *first;
+/*                     4 */        s32 Index1;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      8      |       4 */    union {
+/*                     4 */        struct PropRecord *second;
+/*                     4 */        s32 Index2;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*     12      |       4 */    struct LinkRecord *next;
+
+                               /* total size (bytes):   16 */
+                             }
+==== HatRecord
+/* offset      |    size */  type = struct HatRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+
+                               /* total size (bytes):  128 */
+                             }
+==== GuardAttributeRecord
+/* offset      |    size */  type = struct GuardAttributeRecord {
+/*      0      |       4 */    struct PropDefHeaderRecord {
+/*      0      |       2 */        u16 extrascale;
+/*      2      |       1 */        u8 state;
+/*      3      |       1 */        u8 type;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      4      |       4 */    s32 chrnum;
+/*      8      |       2 */    s16 unk8;
+/*     10      |       1 */    s8 unkA;
+/*     11      |       1 */    s8 GrenadeProb;
+
+                               /* total size (bytes):   12 */
+                             }
+==== SafeObjectRecord
+/* offset      |    size */  type = struct SafeObjectRecord {
+/*      0      |       4 */    struct PropDefHeaderRecord {
+/*      0      |       2 */        u16 extrascale;
+/*      2      |       1 */        u8 state;
+/*      3      |       1 */        u8 type;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      4      |       4 */    union {
+/*                     4 */        struct ObjectRecord *item;
+/*                     4 */        s32 Index1;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      8      |       4 */    union {
+/*                     4 */        struct SafeRecord *safe;
+/*                     4 */        s32 Index2;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*     12      |       4 */    union {
+/*                     4 */        struct DoorRecord *door;
+/*                     4 */        s32 Index3;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*     16      |       4 */    struct SafeObjectRecord *next;
+
+                               /* total size (bytes):   20 */
+                             }
+==== MultiAmmoCrateRecord
+/* offset      |    size */  type = struct MultiAmmoCrateRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |      52 */    struct multiammocrateslot slots[13];
+
+                               /* total size (bytes):  180 */
+                             }
+==== BodyArmourRecord
+/* offset      |    size */  type = struct BodyArmourRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |       4 */    f32 initialamount;
+/*    132      |       4 */    f32 amount;
+
+                               /* total size (bytes):  136 */
+                             }
+==== TagObjectRecord
+/* offset      |    size */  type = struct TagObjectRecord {
+/*      0      |       4 */    struct PropDefHeaderRecord {
+/*      0      |       2 */        u16 extrascale;
+/*      2      |       1 */        u8 state;
+/*      3      |       1 */        u8 type;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      4      |       2 */    u16 ID;
+/*      6      |       2 */    s16 OffsetToObj;
+/*      8      |       4 */    struct TagObjectRecord *NextTag;
+/*     12      |       4 */    ObjectRecord *TaggedObject;
+
+                               /* total size (bytes):   16 */
+                             }
+==== RenameObjectRecord
+/* offset      |    size */  type = struct RenameObjectRecord {
+/*      0      |       4 */    struct PropDefHeaderRecord {
+/*      0      |       2 */        u16 extrascale;
+/*      2      |       1 */        u8 state;
+/*      3      |       1 */        u8 type;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      4      |       4 */    s32 TagID;
+/*      8      |       4 */    s32 unk08;
+/*     12      |       4 */    s32 unk0c;
+/*     16      |       4 */    s32 unk10;
+/*     20      |       4 */    s32 unk14;
+/*     24      |       4 */    s32 unk18;
+/*     28      |       4 */    s32 unk1c;
+/*     32      |       4 */    s32 unk20;
+/*     36      |       4 */    ObjectRecord *renobj;
+
+                               /* total size (bytes):   40 */
+                             }
+==== MissionObjectiveRecord
+/* offset      |    size */  type = struct MissionObjectiveRecord {
+/*      0      |       4 */    struct PropDefHeaderRecord {
+/*      0      |       2 */        u16 extrascale;
+/*      2      |       1 */        u8 state;
+/*      3      |       1 */        u8 type;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      4      |       4 */    s32 ObjRefID;
+/*      8      |       4 */    u32 TextID;
+/*     12      |       4 */    DIFFICULTY MinDificulty;
+/*     16      |       4 */    WatchMenuObjectiveTextRecord *nextentry;
+
+                               /* total size (bytes):   20 */
+                             }
+==== DestroyObjectRecord
+MISSING DestroyObjectRecord
+==== CompleteConditionRecord
+MISSING CompleteConditionRecord
+==== FailConditionRecord
+MISSING FailConditionRecord
+==== CollectObjectRecord
+MISSING CollectObjectRecord
+==== DepositObjectRecord
+MISSING DepositObjectRecord
+==== PhotographObjectRecord
+MISSING PhotographObjectRecord
+==== NULLObjectRecord
+MISSING NULLObjectRecord
+==== EnterRoomRecord
+MISSING EnterRoomRecord
+==== DepositObjectInRoomRecord
+MISSING DepositObjectInRoomRecord
+==== CoopyObjectRecord
+MISSING CoopyObjectRecord
+==== WatchMenuObjectiveTextRecord
+/* offset      |    size */  type = struct WatchMenuObjectiveTextRecord {
+/*      0      |       4 */    struct PropDefHeaderRecord {
+/*      0      |       2 */        u16 extrascale;
+/*      2      |       1 */        u8 state;
+/*      3      |       1 */        u8 type;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      4      |       2 */    u16 unk4;
+
+                               /* total size (bytes):    6 */
+                             }
+==== LockDoorRecord
+/* offset      |    size */  type = struct LockDoorRecord {
+/*      0      |       4 */    struct PropDefHeaderRecord {
+/*      0      |       2 */        u16 extrascale;
+/*      2      |       1 */        u8 state;
+/*      3      |       1 */        u8 type;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      4      |       4 */    union {
+/*                     4 */        struct DoorRecord *door;
+/*                     4 */        s32 Index1;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      8      |       4 */    union {
+/*                     4 */        struct ObjectRecord *lock;
+/*                     4 */        s32 Index2;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*     12      |       4 */    struct LockDoorRecord *next;
+
+                               /* total size (bytes):   16 */
+                             }
+==== VehichleRecord
+/* offset      |    size */  type = struct VehichleRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |       4 */    AIRecord *ailist;
+/*    132      |       2 */    u16 aioffset;
+/*    134      |       2 */    s16 aireturnlist;
+/*    136      |       4 */    f32 speed;
+/*    140      |       4 */    f32 wheelxrot;
+/*    144      |       4 */    f32 wheelyrot;
+/*    148      |       4 */    f32 speedaim;
+/*    152      |       4 */    f32 speedtime60;
+/*    156      |       4 */    f32 turnrot60;
+/*    160      |       4 */    f32 roty;
+/*    164      |       4 */    PathRecord *path;
+/*    168      |       4 */    s32 nextstep;
+/*    172      |       4 */    struct ALSoundState *Sound;
+
+                               /* total size (bytes):  176 */
+                             }
+==== AircraftRecord
+/* offset      |    size */  type = struct AircraftRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |       4 */    AIRecord *ailist;
+/*    132      |       2 */    u16 aioffset;
+/*    134      |       2 */    s16 aireturnlist;
+/*    136      |       4 */    f32 rotoryrot;
+/*    140      |       4 */    f32 rotaryspeed;
+/*    144      |       4 */    f32 rotaryspeedaim;
+/*    148      |       4 */    f32 rotaryspeedtime;
+/*    152      |       4 */    f32 speed;
+/*    156      |       4 */    f32 speedaim;
+/*    160      |       4 */    f32 speedtime60;
+/*    164      |       4 */    f32 yrot;
+/*    168      |       4 */    s32 nextstep;
+/*    172      |       4 */    PathRecord *path;
+/*    176      |       4 */    struct ALSoundState *Sound;
+
+                               /* total size (bytes):  180 */
+                             }
+==== TankRecord
+/* offset      |    size */  type = struct TankRecord {
+/*      0      |     128 */    struct ObjectRecord {
+/*      0      |       4 */        struct PropDefHeaderRecord {
+/*      0      |       2 */            u16 extrascale;
+/*      2      |       1 */            u8 state;
+/*      3      |       1 */            u8 type;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*      4      |       2 */        s16 obj;
+/*      6      |       2 */        s16 pad;
+/*      8      |       4 */        u32 flags;
+/*     12      |       4 */        u32 flags2;
+/*     16      |       4 */        PropRecord *prop;
+/*     20      |       4 */        Model *model;
+/*     24      |      64 */        Mtxf mtx;
+/*     88      |      12 */        coord3d runtime_pos;
+/*    100      |       4 */        union {
+/*                     4 */            u32 runtime_bitflags;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    104      |       4 */        collision_data *ptr_allocated_collisiondata_block;
+/*    108      |       4 */        union {
+/*                     4 */            struct Projectile *projectile;
+/*                     4 */            struct Embedment *embedment;
+
+                                       /* total size (bytes):    4 */
+                                   };
+/*    112      |       4 */        f32 maxdamage;
+/*    116      |       4 */        f32 damage;
+/*    120      |       4 */        rgba_u8 shadecol;
+/*    124      |       4 */        rgba_u8 nextcol;
+
+                                   /* total size (bytes):  128 */
+                               };
+/*    128      |       4 */    collision_data *collision;
+/*    132      |      32 */    rect4f rect;
+/*    164      |       4 */    s32 unkA4;
+/*    168      |       4 */    s32 unkA8;
+/*    172      |       4 */    s32 unkAC;
+/*    176      |       4 */    s32 unkB0;
+/*    180      |       4 */    s32 unkB4;
+/*    184      |       4 */    s32 unkB8;
+/*    188      |       4 */    s32 unkBC;
+/*    192      |       4 */    s32 unkC0;
+/*    196      |       4 */    s32 is_firing_tank;
+/*    200      |       4 */    f32 turret_vertical_angle;
+/*    204      |       4 */    f32 turret_orientation_angle;
+/*    208      |       4 */    f32 unkD0;
+/*    212      |       4 */    f32 stan_y;
+/*    216      |       4 */    s32 unkD8;
+/*    220      |       4 */    f32 tank_orientation_angle;
+
+                               /* total size (bytes):  224 */
+                             }
+==== CutsceneRecord
+/* offset      |    size */  type = struct CutsceneRecord {
+/*      0      |       4 */    struct PropDefHeaderRecord {
+/*      0      |       2 */        u16 extrascale;
+/*      2      |       1 */        u8 state;
+/*      3      |       1 */        u8 type;
+
+                                   /* total size (bytes):    4 */
+                               };
+/*      4      |      12 */    coord3d pos;
+/*     16      |       4 */    f32 theta;
+/*     20      |       4 */    f32 verta;
+/*     24      |       4 */    s32 pad;
+
+                               /* total size (bytes):   28 */
+                             }
+==== PropDefHeaderRecord
+/* offset      |    size */  type = struct PropDefHeaderRecord {
+/*      0      |       2 */    u16 extrascale;
+/*      2      |       1 */    u8 state;
+/*      3      |       1 */    u8 type;
+
+                               /* total size (bytes):    4 */
+                             }

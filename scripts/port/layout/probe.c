@@ -1,0 +1,17 @@
+#include <ultra64.h>
+#include "guestmem.h"
+#include <memp.h>
+#include <PR/gbi.h>
+#include <bondconstants.h>
+#include "bondtypes.h"
+#include "bg.h"
+#include "stan.h"
+#include "model.h"
+#include "chr.h"
+#include "prop.h"
+#include "ob.h"
+#include "image.h"
+#include "objective.h"
+#include "propobj.h"
+#include "chrai.h"
+#include "tex.h"

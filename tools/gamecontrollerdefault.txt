@@ -1,0 +1,98 @@
+# gamecontrollerdefault.txt - GoldenEye PC port controller LAYOUTS
+#
+# Lives next to ge.exe (like gamecontrollerdb.txt). Add your own lines, share
+# the file. Both the game and GE Launcher read it:
+#   - the game seeds a newly connected pad with the FIRST layout whose match
+#     holds (top to bottom - put specific pads above generic ones);
+#   - the launcher lists every layout in its Controls > Layout dropdown, and
+#     "Reset to built-in map" returns to the game's pick.
+#
+# One layout per line, three fields separated by '|':
+#
+#   Name | match terms | key=value; key=value; ...
+#
+# match terms (comma separated, ALL must hold):
+#   type=xbox | type=ps | type=switch | type=any     SDL controller type
+#   name=<exact SDL controller name>                 as shown by the launcher
+#   name~<substring>                                 part of the name
+#   noxy                                             pad has no X / Y buttons
+#   n64                                              this layout is played on the N64
+#                                                    control styles: an N64 controller
+#                                                    or derivative (NSO, 8BitDo 64,
+#                                                    ModRetro M64, a USB adapter), or
+#                                                    a modern pad on its Standard
+#                                                    (console) mapping.
+#                                                    ONLY these get the N64 control
+#                                                    styles (1.1-2.4) and the N64
+#                                                    bindings; everything else binds
+#                                                    Port inputs, which drive movement
+#                                                    and look directly. Add it to your
+#                                                    own line for a derivative we have
+#                                                    not heard of. A line that puts the
+#                                                    C buttons on a stick and binds no
+#                                                    Look stick MUST carry it - port
+#                                                    mode turns only from the Look
+#                                                    stick.
+#
+# values are SDL control names, so one layout fits every pad SDL maps:
+#   buttons: a b x y back guide start leftstick rightstick leftshoulder
+#            rightshoulder dpup dpdown dpleft dpright misc1 touchpad paddle1-4
+#   axes:    leftx+ leftx- lefty+ lefty- rightx+ rightx- righty+ righty-
+#            lefttrigger righttrigger          (sticks: + = right / down)
+#   or a raw token for a control SDL does not name: b8, a4+, h0u
+#   "x,y" = one action on several inputs. Keys you leave out are unbound.
+#
+# keys:
+#   sticks    stick_x stick_y (Move)  look_x look_y (Look, twin stick)
+#   digital   move_up move_down move_left move_right look_up look_down look_left look_right
+#   N64       a b z start l r c_up c_down c_left c_right dpad_up dpad_down dpad_left dpad_right
+#             (a = change weapon, b = use/reload, z = fire, r/l = aim)
+#   Port      reload use walk run walk_toggle prev_weapon next_weapon
+#             prev_inventory next_inventory crouch_toggle crouch_hold
+#             watch_prev watch_next watch_up watch_down watch_objectives
+#
+# Remember: Move stick = stick_x/y, Look stick = look_x/y; with a Look stick
+# bound the port drives the pad twin-stick, and a layout with the C buttons on
+# the right stick instead carries n64 and plays the N64 styles.
+#
+# STANDARD AND PRO (murkantor 2026-09-17). Every modern controller gets a PAIR:
+#   <pad> Pro       twin stick, and every PC convenience bound - reload,
+#                   weapon cycling, gadget cycling, crouch, objectives.
+#                   This is what the port has always shipped.
+#   <pad> Standard  murkantor's layout (2026-10-13, his saved "Xbox Standard
+#                   Default" made built in): twin stick, Port-driven, the
+#                   N64 face positions kept - Y next weapon, A use / accept,
+#                   B next gadget / back, X reload, LS click crouch
+#                   toggle, RB detonate, LB Classic
+#                   Mode. The N64 rows are filled in too (the console
+#                   mapping, C on the right stick) for a pad switched to N64
+#                   mode. PlayStation is the same by position; Switch is
+#                   translated by position (SDL names Switch buttons by
+#                   their LABEL, so the bottom button is b there).
+# STANDARD is listed FIRST of each pair (murkantor 2026-10-13: "the Xbox Standard
+# layout that's default for all players, and the Pro is a built in
+# alternative"), so a pad nobody has chosen for seeds Standard. Switch Pro
+# is Xbox Pro translated by position, like Switch Standard. A player's
+# choice is remembered per slot as midas.ini padN_layout=<name> and beats this
+# order.
+#
+# The N64-adapter layouts below are not paired: an N64 pad has only N64
+# controls, so its Standard and its Pro would be the same line.
+
+NSO N64 (BT) | name=Nintendo N64 Controller, n64 | stick_x=leftx+; stick_y=lefty-; a=a; b=b; z=lefttrigger; start=start; l=leftshoulder; r=rightshoulder; c_up=y; c_down=righttrigger; c_left=x; c_right=back; dpad_up=dpup; dpad_down=dpdown; dpad_left=dpleft; dpad_right=dpright
+
+8BitDo 64 (DInput) | name=8BitDo 64, n64 | stick_x=leftx+; stick_y=lefty-; a=a; b=b; z=lefttrigger,righttrigger; start=start; l=leftshoulder; r=rightshoulder; c_up=b15; c_down=b16; c_left=b18; c_right=b19; dpad_up=dpup; dpad_down=dpdown; dpad_left=dpleft; dpad_right=dpright
+
+8BitDo Modkit (DInput) | name=8BitDo N64, n64 | stick_x=leftx+; stick_y=lefty-; a=a; b=b; z=lefttrigger,righttrigger; start=start; l=leftshoulder; r=rightshoulder; c_up=righty-; c_down=righty+; c_left=rightx-; c_right=rightx+; dpad_up=dpup; dpad_down=dpdown; dpad_left=dpleft; dpad_right=dpright
+
+N64 Controller (USB adapter) | name~N64, n64 | stick_x=leftx+; stick_y=lefty-; a=a; b=b; z=lefttrigger,righttrigger; start=start; l=leftshoulder; r=rightshoulder; c_up=righty-; c_down=righty+; c_left=rightx-; c_right=rightx+; dpad_up=dpup; dpad_down=dpdown; dpad_left=dpleft; dpad_right=dpright
+N64 Controller (USB adapter) | name~64, noxy, n64 | stick_x=leftx+; stick_y=lefty-; a=a; b=b; z=lefttrigger,righttrigger; start=start; l=leftshoulder; r=rightshoulder; c_up=righty-; c_down=righty+; c_left=rightx-; c_right=rightx+; dpad_up=dpup; dpad_down=dpdown; dpad_left=dpleft; dpad_right=dpright
+
+PlayStation Standard | type=ps | stick_x=leftx+; stick_y=lefty-; look_x=rightx+; look_y=righty-; move_up=dpup; move_down=dpdown; move_left=dpleft; move_right=dpright; z=righttrigger; r=lefttrigger; start=start; a=y; b=a; l=leftshoulder; c_up=righty-; c_down=righty+; c_left=rightx-; c_right=rightx+; reload=x; use=a; next_weapon=y; next_inventory=b; watch_prev=leftshoulder; watch_next=rightshoulder; detonate=rightshoulder; zoom_in=lefty-; zoom_out=lefty+; menu_accept=a; menu_back=b; crouch_toggle=leftstick; classic_toggle=leftshoulder
+PlayStation Pro | type=ps | stick_x=leftx+; stick_y=lefty-; look_x=rightx+; look_y=righty-; move_up=dpup; move_down=dpdown; move_left=dpleft; move_right=dpright; z=righttrigger; r=lefttrigger; start=start; reload=x; use=a; prev_weapon=leftshoulder; next_weapon=rightshoulder; prev_inventory=y; next_inventory=b; crouch_toggle=leftstick,rightstick; watch_prev=leftshoulder; watch_next=rightshoulder; watch_objectives=back; zoom_in=lefty-,dpup; zoom_out=lefty+,dpdown; menu_accept=a; menu_back=b
+
+Switch Standard | type=switch | stick_x=leftx+; stick_y=lefty-; look_x=rightx+; look_y=righty-; move_up=dpup; move_down=dpdown; move_left=dpleft; move_right=dpright; z=righttrigger; r=lefttrigger; start=start; a=x; b=b; l=leftshoulder; c_up=righty-; c_down=righty+; c_left=rightx-; c_right=rightx+; reload=y; use=b; next_weapon=x; next_inventory=a; watch_prev=leftshoulder; watch_next=rightshoulder; detonate=rightshoulder; zoom_in=lefty-; zoom_out=lefty+; menu_accept=b; menu_back=a; crouch_toggle=leftstick; classic_toggle=leftshoulder
+Switch Pro | type=switch | stick_x=leftx+; stick_y=lefty-; look_x=rightx+; look_y=righty-; move_up=dpup; move_down=dpdown; move_left=dpleft; move_right=dpright; z=righttrigger; r=lefttrigger; start=start; reload=y; use=b; prev_weapon=leftshoulder; next_weapon=rightshoulder; prev_inventory=x; next_inventory=a; crouch_toggle=leftstick,rightstick; watch_prev=leftshoulder; watch_next=rightshoulder; watch_objectives=back; zoom_in=lefty-,dpup; zoom_out=lefty+,dpdown; menu_accept=b; menu_back=a
+
+Xbox Standard | type=any | stick_x=leftx+; stick_y=lefty-; look_x=rightx+; look_y=righty-; move_up=dpup; move_down=dpdown; move_left=dpleft; move_right=dpright; z=righttrigger; r=lefttrigger; start=start; a=y; b=a; l=leftshoulder; c_up=righty-; c_down=righty+; c_left=rightx-; c_right=rightx+; reload=x; use=a; next_weapon=y; next_inventory=b; watch_prev=leftshoulder; watch_next=rightshoulder; detonate=rightshoulder; zoom_in=lefty-; zoom_out=lefty+; menu_accept=a; menu_back=b; crouch_toggle=leftstick; classic_toggle=leftshoulder
+Xbox Pro | type=any | stick_x=leftx+; stick_y=lefty-; look_x=rightx+; look_y=righty-; move_up=dpup; move_down=dpdown; move_left=dpleft; move_right=dpright; z=righttrigger; r=lefttrigger; start=start; reload=x; use=a; prev_weapon=leftshoulder; next_weapon=rightshoulder; prev_inventory=y; next_inventory=b; crouch_toggle=leftstick,rightstick; watch_prev=leftshoulder; watch_next=rightshoulder; watch_objectives=back; zoom_in=lefty-,dpup; zoom_out=lefty+,dpdown; menu_accept=a; menu_back=b

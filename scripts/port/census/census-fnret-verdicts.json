@@ -1,0 +1,19 @@
+{
+  "about": "Midas verdicts for census-fnret.py (D-219/D-220's class: a function called or declared with a return type other than its definition's), round 5 (docs/port-ios/08-round5-census.md). Keyed by file + a regex on the source line. SAFE / NONPORT / DEAD = audited. Anything else (or no rule) fails --check.",
+  "rules": [
+    {"file": "src/game/initweaponanigroups.c", "match": "^extern s32 get_ptr_allocated_block_for_vertices;", "verdict": "NONPORT",
+     "why": "the N64/x86 arm (#else of PORT); the PORT arm declares the real prototype and passes the typed function (donor D-219, merged in round 2)"},
+    {"file": "src/game/stan.c", "match": "^extern s32 sub_GAME_7F0B4F9C\\(u8 arg0\\)", "verdict": "DEAD",
+     "why": "its only caller sub_GAME_7F0B2FE0 has no callers in the tree (matching-decomp artefact: bg.c defines it f32); nothing reads the value"},
+    {"file": "src/sprintf.c", "match": "_Printf\\(proutSprintf, dst, fmt, args\\)", "verdict": "SAFE",
+     "why": "proutSprintf returns char *, _Printf (port/src/printf_port.c) expects a u8 * callback: both pointers, same register and width"},
+    {"file": "port/src/joy_port.c", "match": "portSndPlaySfxPitched", "verdict": "SAFE",
+     "why": "declared void *, defined ALSoundState *: both pointers"},
+    {"file": "src/game/frametiming.c", "match": "strtol", "verdict": "SAFE",
+     "why": "`long` vs `long int` is the same type (the script's spelling normaliser does not alias them)"},
+    {"file": "src/game/image.c", "match": "portRootFopen", "verdict": "SAFE",
+     "why": "declared void *, defined FILE *: both pointers"},
+    {"file": "src/game/sky.c", "match": "ge_sky_push", "verdict": "SAFE",
+     "why": "uint32_t is unsigned int on every host"}
+  ]
+}

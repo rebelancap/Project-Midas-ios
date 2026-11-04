@@ -1,0 +1,64 @@
+#include <ultra64.h>
+#ifdef PORT
+#include "guestmem.h"
+#endif
+#include <memp.h>
+#include "front.h"
+#include "initmenus.h"
+#include "initintromatrices.h"
+#include <macro.h>
+
+void init_menus_or_reset(void)
+{
+    s32 i;
+    current_menu = ~MENU_LEGAL_SCREEN;
+    maybe_prev_menu = ~MENU_LEGAL_SCREEN;
+    screen_size = SCREEN_SIZE_320x240;
+    spectrum_related_flag = TRUE;
+    is_emulating_spectrum = FALSE;
+    folder_selection_screen_option_icon = 0;
+    folder_selected_for_deletion = -1;
+    folder_selected_for_deletion_choice = 1;
+    tab_start_highlight = FALSE;
+    tab_next_highlight = FALSE;
+    tab_prev_highlight = FALSE;
+    maybe_is_in_menu = TRUE;
+
+    if (prev_keypresses)
+    {
+        menu_update = MENU_FILE_SELECT;
+    }
+
+    if (menu_update < 0)
+    {
+        menu_update = MENU_FILE_SELECT;
+    }
+
+#if defined(PORT)
+    /* PC port (D45/D46): texpool 0x19000 + model region 0x25000 (D46) +
+     * zbuf @ALIGN64(0x3E000) size 440x330x2=0x46B80 -> 0x84B80, rounded to
+     * 0x85000; logo/gunbarrel/wallet usage is unchanged. */
+    ptr_logo_and_walletbond_DL = (u8 *)mempAllocBytesInBank(0x85000, MEMPOOL_STAGE); // allocation in bytes so cast to u8 from gfx
+#else
+    ptr_logo_and_walletbond_DL = (u8 *)mempAllocBytesInBank(0x78000, MEMPOOL_STAGE); // allocation in bytes so cast to u8 from gfx
+#endif
+
+#if defined(VERSION_EU)
+    ptr_menu_videobuffer = mempAllocBytesInBank(0x55040, MEMPOOL_STAGE);
+#else
+#ifdef PORT
+    ptr_menu_videobuffer = (s32)GUEST_ADDR(mempAllocBytesInBank(0x4b040, MEMPOOL_STAGE));   /* GUEST address -- docs/pointer-contract.md */
+#else
+    ptr_menu_videobuffer = mempAllocBytesInBank(0x4b040, MEMPOOL_STAGE);
+#endif
+#endif
+
+    ptr_menu_videobuffer = ALIGN64_V1(ptr_menu_videobuffer);
+
+    for (i = 0; i < 4; i++)
+    {
+        walletinst[i] = NULL;
+    }
+
+    alloc_intro_matrices();
+}

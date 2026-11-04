@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Project Midas — visionOS (Phase 5 flat 2D window, round 30; Phase 6 SwiftUI
+  entry, round 45;
+  docs/port-ios/40-round30-visionos.md). Copied from GoldenEye-Decomp-ios
+  app/ios/Info-visionos.plist (round 37a, D-343) with Midas's names.
+
+  Same app, same bundle id, same sources; only a handful of Info.plist keys are
+  platform-specific, and they live in a SECOND file rather than being
+  conditionalised into ios/Info.plist so the shipping iOS target is untouched
+  (perfect-dark-ios app/ios/Info-visionos.plist is the family model).
+
+  What differs from ios/Info.plist, and why:
+
+   - UIApplicationSceneManifest WITHOUT UISceneConfigurations (round 45,
+     Phase 6 M1, docs/port-ios/64 §2.1, PD D-047). SwiftUI declares this app's
+     scenes now - app/vision3d/GEVisionApp.swift is the @main, because an
+     ImmersiveSpace can only be declared by a SwiftUI App - and a
+     configuration here would fight it for the window scene. (Phase 5 needed
+     one naming GESceneDelegate because an empty manifest is not lifecycle
+     adoption under the xrOS 27 SDK, PD commit 351394a; a SwiftUI app adopts
+     the lifecycle by construction.) GESceneDelegate is compiled OUT of this
+     target, and that is load-bearing: UIKit persists a scene session's
+     configuration name AND delegate class name across installs of the same
+     bundle id, so a headset that ran the Phase-5 builds restores a session
+     naming GESceneDelegate; with the class absent the lookup fails and UIKit
+     falls back to SwiftUI's scenes (q2repro NOTES-FROM-VKQUAKE :15-45; a
+     fresh simulator never reproduces it). UIApplicationSupportsMultipleScenes
+     stays TRUE, inside the manifest dict (outside it the key is silently
+     ignored). iOS keeps its own manifest, false, and the delegate.
+   - CFBundleIconName AppIcon, no CFBundleIconFiles / CFBundleIcons: a visionOS
+     icon is a layered .solidimagestack in ios/Assets-visionos.xcassets
+     (scripts/make-app-icon.py, its visionos flag). A flat PNG list renders as a BLANK
+     tile here.
+   - No LSRequiresIPhoneOS, no UISupportedInterfaceOrientations(~ipad): a
+     visionOS window is user-resizable and has no orientation.
+   - No UIStatusBarHidden / UIViewControllerBasedStatusBarAppearance: no status
+     bar; SDL's status-bar calls are compiled out by
+     patches/sdl2/visionos-compat.patch.
+   - No CADisableMinimumFrameDurationOnPhone (an iPhone ProMotion gate) and no
+     UIRequiredDeviceCapabilities (xrOS is arm64 + Metal by definition).
+
+  Unchanged and load-bearing: UIFileSharingEnabled +
+  LSSupportsOpeningDocumentsInPlace (the ROM, midas.ini and the XBLA import
+  live in Documents exactly as on iOS — that is the onboarding surface in Files
+  on Vision Pro too), the netplay seam keys (present from the first build on
+  every platform), the Bluetooth insurance strings, and
+  UIApplicationSupportsIndirectInputEvents.
+-->
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Project Midas</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Project Midas</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
+
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<true/>
+	</dict>
+
+	<key>UILaunchScreen</key>
+	<dict/>
+
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+
+	<!-- Round 57 (docs/port-ios/77): the cartridge dump is an OPENABLE
+	     document, so AirDrop offers Project Midas for a .z64/.n64/.v64 and
+	     Files' share sheet / "Open in" lists it. Without a document type the
+	     onboarding's "AirDrop it" line could not work (doc 76 §4). The open
+	     lands in GESceneDelegate scene:openURLContexts: (iOS) or SwiftUI's
+	     onOpenURL (visionOS) -> +[GEOnboarding importROMAtURL:], which copies
+	     the file into Documents through the same classifier as Choose ROM….
+	     Our own imported UTI carries the three extensions; the other two
+	     identifiers are what Delta and Manic EMU declare for the same files,
+	     listed so the type still matches on a device where one of those apps
+	     claimed the extension first. Viewer + Alternate: we never own .z64. -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>N64 cartridge dump</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.rebelancap.projectmidas.n64-rom</string>
+				<string>com.rileytestut.delta.game.n64</string>
+				<string>public.aoshuang.game.n64</string>
+			</array>
+		</dict>
+	</array>
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.rebelancap.projectmidas.n64-rom</string>
+			<key>UTTypeDescription</key>
+			<string>N64 cartridge dump</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>z64</string>
+					<string>n64</string>
+					<string>v64</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Project Midas uses the local network to find and play with other players on the same Wi-Fi.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_projectmidas._udp</string>
+		<string>_projectmidas._tcp</string>
+	</array>
+
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Project Midas can connect to Bluetooth game controllers.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Project Midas can connect to Bluetooth game controllers.</string>
+
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+</dict>
+</plist>

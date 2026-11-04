@@ -1,0 +1,11 @@
+{
+  "about": "Midas verdicts for census-ptrptr.py (D-105's class: a non-** argument passed to a ** parameter), round 5 (docs/port-ios/08-round5-census.md). Keyed by file + a regex on the source line. SAFE = audited, no pointer-width store through the narrow slot. Anything else (or no rule) fails --check. Same three sites as the donor's audit, re-read against Midas's tree.",
+  "rules": [
+    {"file": "src/game/initanitable.c", "match": "expand_ani_table_entries\\(\\(s32\\*\\)&animation_table_ptrs[12]\\)", "verdict": "SAFE",
+     "why": "the s32[] table is walked as s32 * on PORT (initanitable.c expand_ani_table_entries, `var_v0 = (s32 *)arg0`); every store through it is a 4-byte s32 GUEST address, never a host pointer"},
+    {"file": "src/game/model.c", "match": "modelBuildGroupMatrices\\(arg0, model, node, &rot1\\)", "verdict": "SAFE",
+     "why": "a ModelRenderData * read as Mtxf **: only parentMtx[0] is READ, and ModelRenderData's first field is Mtxf *basemtx (src/bondtypes.h), pointer-wide on the host; nothing is stored through it"},
+    {"file": "src/game/stan.c", "match": "stanTestVolume\\(arg1, arg2, arg3, arg4, arg5, arg6, arg7\\)", "verdict": "SAFE",
+     "why": "in sub_GAME_7F0B31A4, which has no callers in the tree (dead code); a StandTile * passed as StandTile **"}
+  ]
+}

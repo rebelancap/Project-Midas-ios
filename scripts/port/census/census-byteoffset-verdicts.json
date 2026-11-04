@@ -1,0 +1,530 @@
+{
+ "_doc": "Midas verdicts for census-byteoffset.py, round 5 (docs/port-ios/08-round5-census.md). Rules with \"src\":\"donor\" are the donor (GoldenEye-Decomp-ios @ 31dc846e) verdicts re-applied to the same merged code and re-read on Midas; \"src\":\"midas\" rules are new. Hand verdicts for scripts/census-byteoffset.py (round 19d, D-100). A rule matches a row when its file equals the row's file and its regex matches the row's source line (or the N64-arm match text); 'kind' optionally restricts to CAST/PUN/COPY/ALLOC/STORAGE/N64ARM. First match wins. Mechanical verdicts (SAME by identical layout or identical field, NOT-ACCESS) need no rule.",
+ "rules": [
+  {
+   "file": "src/game/gunfire.c",
+   "kind": "N64ARM",
+   "re": "D_80035D04 \\+ 0x3c",
+   "verdict": "SHIFTED-FIXED",
+   "why": "D290 (upstream a5804d1, D-139): the N64 copy spans D_80035D04's last word into watchControllerButtonBases, the ModelRenderData template (zbufferenabled=TRUE, flags=3); the PORT arm builds the explicit template, as at the D264 site",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/bg.c",
+   "kind": "CAST",
+   "re": "g_BgPortals\\) \\+ offset",
+   "verdict": "SIZE-BUG",
+   "why": "`offset += 8` is the N64 sizeof(bg_portal_data_entry); the host entry is 16 (`bg_portal_entry *` first), so every portal after [0] is read at the wrong stride. Unreferenced function (sub_GAME_7F0B8DF4). Fixed: index by element.",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/bg.c",
+   "kind": "CAST",
+   "re": "&g_BgPortals\\[i\\]",
+   "verdict": "SAME",
+   "why": "D-100: indexed by element",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/bondview2.c",
+   "re": "farr[56] = \\(f32\\*\\)",
+   "verdict": "SAME",
+   "why": "tank Switches[5]/[6] are BoundingBox nodes; [3],[4] = ymin/ymax. ModelRoData_BoundingBoxRecord (u32 + 6 f32) is identical on both ABIs",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/bondview2.c",
+   "re": "rwdata = \\(s32 \\*\\) modelGetNodeRwData",
+   "verdict": "SAME",
+   "why": "only ever dereferenced at offset 0 (`*rwdata = ...`): the Switch record's `visible` word",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/bondview2.c",
+   "re": "nodepos2? = \\(f32 \\*\\)|\\(f32 \\*\\) objheader->Switches\\[[0-2]\\]->Data",
+   "verdict": "SAME",
+   "why": "watch nodes: only [0..2] read (the record's leading coord3d), identical on both ABIs; Switches[3] itself is passed on as a ModelNode*",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/bondview2.c",
+   "re": "act_bondmulti\\.unk2c = \\(f32 \\*\\) firingtable",
+   "verdict": "SHIFTED-BUG",
+   "why": "the pointer escapes to chraction.c, which reads `unk2c[3]` = N64 byte 0xc = angle_offset; on the host byte 0xc is turn_angle_per_frame (the union `anim` is 8 bytes). Fixed by typing the field",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/bondview_r.c",
+   "re": "credits = \\(CreditsEntry",
+   "verdict": "NOT-ACCESS",
+   "why": "a file offset from the setup file added to the HOST file base (the converted file's own layout)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/chraction.c",
+   "re": "\\(\\(f32\\*\\)arg1\\)\\[1[2367]\\]",
+   "verdict": "SHIFTED-BUG",
+   "why": "arg1 is a weapon_firing_animation_table *: N64 [12],[13],[16],[17] = max_up, max_down, free_arm_frac_up, free_arm_frac_down; host bytes 0x30/0x34/0x40/0x44 = aim_end_frame, max_up, max_right, free_arm_frac_up (the union `anim` is 8 bytes). Every armed guard's aim-pitch clamp and off-arm follow fraction",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/chrprop.c",
+   "re": "\\(char\\*\\)gdl - \\(char\\*\\)gdl_in",
+   "verdict": "NOT-ACCESS",
+   "why": "pointer difference in host bytes, consumed as host bytes",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/chrprop.c",
+   "re": "g_Textures",
+   "verdict": "SHIFTED-BUG",
+   "why": "image_entry byte 0 & 0xf: on the N64 (MSB-first bitfields, decomp IMAGE() = {HS, HT, SZ}) it is hitTexture; on the host the PORT struct puts dataoffset in bits 0-23, so it is the low nibble of the texture's ROM offset -- a pseudo-random hit type 0..15 against a 13-entry table. Upstream's D67 note claims the N64 reads dataoffset here; it does not (byte 0 is the MSB on a big-endian word)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/front.c",
+   "re": "_fileNameLoadToAddr|langLoadToBank",
+   "verdict": "NOT-ACCESS",
+   "why": "a Gfx buffer used as a raw load buffer (bytes in, bytes out)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/gunfire.c",
+   "re": "hingedata = ",
+   "verdict": "SAME",
+   "why": "[0..5] are six leading floats of the hinge node (the BSP/Interlinkage shape); every record variant whose first 24 bytes are floats is identical on both ABIs",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/gunfire.c",
+   "re": "\\(f32 \\*\\) modelGetNodeRwData",
+   "verdict": "SAME",
+   "why": "only dereferenced at offset 0 (`*((s32 *) nodeptr) = ...`)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/gunfire.c",
+   "re": "\\(f32 \\*\\)|\\(ModelNode \\*\\*\\)",
+   "verdict": "SAME",
+   "why": "node data read only as its leading coord3d ([0..2] / matrix_4x4_set_position) or a ModelNode* passed on whole; identical on both ABIs",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/image.c",
+   "re": "u8 \\*bytes = \\(u8 \\*\\)gdl",
+   "verdict": "SHIFTED-FIXED",
+   "why": "PORT arm walks the D68-fixed globalimagetable in its host byte order (marker at bytes 6..7)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/lightfixture.c",
+   "kind": "CAST",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "GE_TRIAUDIT instrument: replays the OLD wrong 16-byte-Gfx reads on purpose to count how many indices they got wrong",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/objecthandler.c",
+   "re": "data = \\(f32 \\*\\)node->Data",
+   "verdict": "SAME",
+   "why": "only data[0..2] read (the record's leading position), identical on both ABIs",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/options.c",
+   "re": "pFontChars\\)\\[0x224\\]",
+   "verdict": "SHIFTED-BUG",
+   "why": "s32 index 0x224 = byte 0x890 = N64 chars[91].height (fontchar is 24 bytes); host fontchar is 32 bytes, so byte 0x890 is chars[68].kerningindex. Dead debug function (sub_GAME_7F0A4B40, no callers)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/options.c",
+   "re": "chars\\[91\\]\\.height",
+   "verdict": "SAME",
+   "why": "D-100: named",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/prop.c",
+   "kind": "PUN",
+   "re": ".",
+   "verdict": "SAME",
+   "why": "downcast from the PropDefHeaderRecord header to the record that inherits it; the member is read by name in the record's own (host) layout",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/propobj.c",
+   "kind": "PUN",
+   "re": "temp_v1_11",
+   "verdict": "SAME",
+   "why": "a coord3d* local reused to hold a PropRecord*; the member is read by name on its true type",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/propobj.c",
+   "re": "temp_s0_5 = \\(f32 \\*\\)",
+   "verdict": "SAME",
+   "why": "only [2] read: the record's leading position, identical on both ABIs",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/propobj.c",
+   "re": "temp_v0_25 = \\(f32 \\*\\)",
+   "verdict": "SAME",
+   "why": "Switches[10] is a BoundingBox node; [1],[2],[5],[6] = xmin, xmax, zmin, zmax; identical on both ABIs",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/propobj.c",
+   "re": "0xC4\\)",
+   "verdict": "SHIFTED-BUG",
+   "why": "N64 0xc4 is the s32 the setup file stores there (the windowed door's opaque distance, 600 in every windowed door in the game); host 0xc4 is openPosition (float bits read as an int: 0 when closed). Fixed: DOOR_OPAQUE_DIST() next to the field",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/propobj.c",
+   "re": "\\(\\(f32 \\*\\)rodata\\)\\[",
+   "verdict": "SAME",
+   "why": "the CCTV's Switches[2] is a BoundingBox node; [1..6] = the six bounds, identical on both ABIs",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/propobj.c",
+   "re": "\\(u8 \\*\\)obj \\+ off\\)",
+   "verdict": "SAME",
+   "why": "off = slot * sizeof(struct multiammocrateslot): host-correct by construction",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/propobj.c",
+   "re": "\\(char \\*\\)&door->|\\(char \\*\\)door\\)",
+   "verdict": "NOT-ACCESS",
+   "why": "D202 diagnostic prints the host offset of a field (pointer difference)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/propobj.c",
+   "re": "g_Textures",
+   "verdict": "SHIFTED-BUG",
+   "why": "same as chrprop.c: image_entry byte 0 & 0xf is hitTexture on the N64 and the low nibble of dataoffset on the host",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/rsp.c",
+   "re": "data_ptr",
+   "verdict": "NOT-ACCESS",
+   "why": "the display-list pointer handed on whole",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/stan.c",
+   "re": ".",
+   "verdict": "SAME",
+   "why": "StandTile/StandTilePoint are 8-byte, pointer-free records whose file layout the stan sidecar keeps; link<<3 and the 0x80 file header are file-format offsets, identical on both ABIs",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/tex.c",
+   "re": "sub_GAME_7F0CCB38\\(\\(s32 \\*\\)tex\\)",
+   "verdict": "SHIFTED-BUG",
+   "why": "callee reads arg0[2] & 3: N64 byte 8..11 BE, low two bits = tex->depth; host byte 8 is the low word of `u8 *data`, so depth reads as the pointer's alignment bits (0) and the G_LOADBLOCK dxt is computed for 4-bit texels. fast3d ignores dxt, so no visible change; the GBI word does change",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/textrelated.c",
+   "re": "romdataFixupFont",
+   "verdict": "NOT-ACCESS",
+   "why": "the port's font converter consumes the N64 file bytes and writes the host struct",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/unk_092E50.c",
+   "re": "\\(u32 \\*\\) MipMap2C",
+   "verdict": "SHIFTED-BUG",
+   "why": "u32 [8] = byte 0x20 = N64 Gfx[4].w0 = the gsDPSetPrimColor whose low byte is the PRIM LOD fraction; on the 16-byte host Gfx byte 0x20 is Gfx[2].w0, the G_SETTILESIZE of tile 0, whose low byte is tl. Dam/Caverns water: the TEXEL0/TEXEL1 cross-fade never animates (stuck at 15/255) and tile 0's t scroll is overwritten by the sine",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/unk_092E50.c",
+   "re": "\\[4\\]\\.words\\.w0",
+   "verdict": "SAME",
+   "why": "D-100: indexed by Gfx element",
+   "src": "donor"
+  },
+  {
+   "file": "port/src/dram.c",
+   "re": ".",
+   "verdict": "NOT-STRUCT",
+   "why": "a probe byte written through two views of the same page",
+   "src": "donor"
+  },
+  {
+   "file": "src/libultra/audio/bnkf.c",
+   "re": ".",
+   "verdict": "NOT-ACCESS",
+   "why": "pointer rebase: a file offset added to the whole pointer",
+   "src": "donor"
+  },
+  {
+   "file": "src/libultra/audio/synallocfx.c",
+   "re": ".",
+   "verdict": "NOT-ACCESS",
+   "why": "an opaque ALFxRef handle",
+   "src": "donor"
+  },
+  {
+   "file": "src/libultra/libc/xldtob.c",
+   "re": "unsigned short \\*ps",
+   "verdict": "SHIFTED-FIXED",
+   "why": "byte-order sibling of the class: _D0.._D3 index the f64 halfwords big-endian first, so on the host _Ldunscale read the mantissa as the exponent and the game sprintf printed every %f as 0.0. Fixed round 19d (D-100, 4a0240a9): the indices are reversed under PORT on a little-endian host; the cast stays",
+   "src": "donor"
+  },
+  {
+   "file": "src/memp.c",
+   "re": "u8 \\*\\*\\)g_mempPools",
+   "verdict": "SAME",
+   "why": "pointer-scaled stride: four pointer slots per pool == sizeof(MemoryPool) on both ABIs (4 pointers). _Static_assert added",
+   "src": "donor"
+  },
+  {
+   "file": "src/snd.c",
+   "re": ".",
+   "verdict": "SAME",
+   "why": "ALLink `link` is ALSoundState's first member: offset 0 on both ABIs",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/inititemslots.c",
+   "kind": "ALLOC",
+   "re": "0x14",
+   "verdict": "SIZE-BUG",
+   "why": "equipmaxitems * 0x14 is the N64 sizeof(InvItem); the host InvItem is 0x20 (next/prev pointers). bondinvReinitInv writes type = -1 into all 30+ slots, i.e. 0x168+ bytes past the allocation into the next MEMPOOL_STAGE block, every stage load",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/bondview2.c",
+   "kind": "STORAGE",
+   "re": "mtx\\)",
+   "verdict": "SAME",
+   "why": "f32[15] used as a 64-byte Mtxf: a 4-byte stack overrun on BOTH ABIs (N64-faithful, not a host-layout bug). Widened to 16 under PORT",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/bg.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "N64-layout Gfx byte reads; the PORT arm reads the 16-byte host Gfx through Gdma_le/Gtri_le (round 5a/6)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/propobj.c",
+   "kind": "N64ARM",
+   "re": "gdl|tcmd",
+   "verdict": "SHIFTED-FIXED",
+   "why": "N64-layout Gfx byte reads; the PORT arm uses the named LE Gfx members",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/lightfixture.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "N64 Gfx byte reads; PORT arm uses Gtri_le (round 6)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/bondview2.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "watch Model punned at player+0x230; PORT arm uses the inline `something_with_watch_object_instance` Model (D56/D140)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/glass2.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "D-086 / upstream D219: PORT arm reads unk28..unk2B by name",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/image.c",
+   "kind": "N64ARM",
+   "re": "texLoad",
+   "verdict": "SHIFTED-FIXED",
+   "why": "PORT arm rebases with GUEST_PTR (D68 table)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/image.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "NOT-ACCESS",
+   "why": "pointer alignment, not a struct access",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/objecthandler_2.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "NOT-ACCESS",
+   "why": "size rounding, not a struct access",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/initmenus.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "N64 buffer size; PORT arm 0x85000 (upstream D45 + D-085)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/model.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "N64 sizeof literal; PORT arm uses sizeof (upstream D243 / M-189 for 0xc0)",
+   "src": "donor"
+  },
+  {
+   "file": "src/sched.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "PORT arm reads client[1].next by name",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/chraction.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "D-100: N64 arm of the weapon_firing_animation_table field reads",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/chrprop.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "D-100: N64 arm of the image_entry hit-type read",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/propobj.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "D-100: N64 arm (named-field read under PORT)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/options.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "D-100: N64 arm (named-field read under PORT)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/unk_092E50.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "D-100: N64 arm (Gfx element read under PORT)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/inititemslots.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "D-100: N64 arm (sizeof(InvItem) under PORT)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/tex.c",
+   "kind": "N64ARM",
+   "re": ".",
+   "verdict": "SHIFTED-FIXED",
+   "why": "D-100: N64 arm (tex->depth under PORT)",
+   "src": "donor"
+  },
+  {
+   "file": "src/game/bondview_r.c",
+   "kind": "CAST",
+   "re": "g_ptrStageSetupFile \\+ \\(u32\\)intro_credits->unk04",
+   "verdict": "SAME",
+   "why": "a byte offset into the setup FILE image (file layout, not a struct field); stagesetup is only the base pointer's type",
+   "src": "midas"
+  },
+  {
+   "file": "src/game/chraction.c",
+   "kind": "CAST",
+   "re": "\\(u8 \\*\\) self - \\(u8 \\*\\) g_ActiveChrs",
+   "verdict": "SAME",
+   "why": "element index by host sizeof(ChrRecord) (`d % sizeof(ChrRecord)`, `d / sizeof(ChrRecord)`)",
+   "src": "midas"
+  },
+  {
+   "file": "src/game/dyn.c",
+   "kind": "CAST",
+   "re": "used  = \\(u8 \\*\\)gdlEnd - g_GfxBuffers",
+   "verdict": "SAME",
+   "why": "byte count of a Gfx buffer; Gfx is 16 bytes on both sides of the comparison",
+   "src": "midas"
+  },
+  {
+   "file": "src/game/prop.c",
+   "kind": "CAST",
+   "re": "portRestoreSetupRegion\\(\\(u32 \\*\\) g_CurrentSetup\\.",
+   "verdict": "SAME",
+   "why": "sized by portMeasurePads/portMeasureBoundPads, which measure host records (pointer difference / 4), not N64 sizes",
+   "src": "midas"
+  },
+  {
+   "file": "port/src/romfile_setup.c",
+   "kind": "CAST",
+   "re": "probeMismatch\\(\\(const u8 \\*\\) &c[pb]\\[i\\]",
+   "verdict": "SAME",
+   "why": "diagnostic probe over the first 36 bytes = pos/up/look coord3d triplet, identical in both layouts (port/**, fenced: listed only)",
+   "src": "midas"
+  },
+  {
+   "file": "port/src/port_textures.c",
+   "kind": "CAST",
+   "re": "\\(const u8 \\*\\) sXhairTex\\[k\\]",
+   "verdict": "NOT-ACCESS",
+   "why": "address range test only (t >= a && t < b), no offset (port/**, fenced)",
+   "src": "midas"
+  },
+  {
+   "file": "port/src/romfile_stan.c",
+   "kind": "CAST",
+   "re": "portStanPackForProbe",
+   "verdict": "NOT-ACCESS",
+   "why": "diagnostic probe comparing two packed images word by word as file offsets (port/**, fenced)",
+   "src": "midas"
+  },
+  {
+   "file": "src/game/gunfire.c",
+   "kind": "N64ARM",
+   "re": "\\(\\(u8 \\*\\)imageoffset(_[lr])?\\)\\[4\\]",
+   "verdict": "SHIFTED-FIXED",
+   "why": "x86/N64 arm; the PORT arm reads ((u8 *)GUEST_PTR(imageoffset))[4] (a byte of the image header, layout-invariant)",
+   "src": "midas"
+  },
+  {
+   "file": "src/game/stan.c",
+   "kind": "N64ARM",
+   "re": "\\(\\(s32 \\*\\) arg4\\)\\[[0-3]\\]",
+   "verdict": "SHIFTED-FIXED",
+   "why": "donor D90: the PORT arm clears the record by field name (24-byte host record)",
+   "src": "midas"
+  }
+ ]
+}

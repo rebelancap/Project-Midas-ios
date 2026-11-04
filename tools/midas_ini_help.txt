@@ -1,0 +1,349 @@
+PROJECT MIDAS - midas.ini HELP
+==============================
+
+midas.ini is the settings file for Project Midas. It sits next to the game
+executable and holds plain key=value lines in the sections [input],
+[display] and an optional [data]. It has no comments; this file explains
+the keys. Keyboard and mouse binds are kept separately, in
+Data/Devices/kbm.gedevice (see the last section).
+
+ - Most settings can be changed in the in-game menus, which save them here.
+ - Edit the files by hand only while the game is closed.
+ - Deleting midas.ini restores the default settings (the game writes a new
+   one). Your binds are kept.
+ - An old ge.ini is renamed to midas.ini automatically on first start, and
+   its [controls] binds move to Data/Devices/kbm.gedevice.
+ - Switches: 1 = on, 0 = off, unless stated otherwise. Key names are not
+   case sensitive.
+
+
+==============================================================================
+[input]  mouse and controllers
+==============================================================================
+
+  Key                 | Default | What it does
+  --------------------+---------+-------------------------------------------
+  Mouse
+  mouse               | 1       | Mouse look on or off
+  smart_mouse_lock    | 0       | 0 = click the window to capture the pointer,
+                      |         | F1 releases it. 1 = captured only while
+                      |         | you are playing (menus, watch, pause,
+                      |         | cutscenes and death release it)
+  mouse_sens_x        | 2.5     | Look speed, left-right (higher = faster)
+  mouse_sens_y        | 2.5     | Look speed, up-down
+  mouse_sens_aim      | 1.0     | Crosshair speed while aiming only
+  Player 1
+  p1_hybrid           | 1       | 1 = keyboard, mouse and player 1's pad all
+                      |         | drive player 1 together. 0 = a pad that
+                      |         | owns player 1 mutes keyboard and mouse
+                      |         | during play (menus still take the keyboard)
+  detonate_use_reload | 1       | With remote mines in hand, use and reload
+                      |         | pressed together detonate them
+  shoot_next_prev     | 1       | Hold next weapon (or next gadget) and tap
+                      |         | shoot to go back one, as N64 A held + Z
+  no_aim_crouch       | 0       | 1 = aiming and pushing down (stick, C-down,
+                      |         | D-down or the back key) no longer crouches.
+                      |         | The crouch binds still work
+  Controllers
+  pads                | 4       | N64 pads reported connected (1 to 4)
+  rumble              | 1       | Vibration on or off
+  deadzone            | 4096    | Stick deadzone, 0 to 32767
+  trigger_threshold   | 3276    | Trigger pull that counts as pressed (~10%)
+  stick_scale         | 1.0     | Extra stick sensitivity multiplier
+  pad1..pad4          | auto    | Controller for each N64 slot: auto (connect
+                      |         | order), none (slot left free), or an SDL
+                      |         | controller GUID (add #2, #3 to choose among
+                      |         | identical devices)
+  rawinput            | 1       | Windows: 1 = RawInput for Xbox-type pads,
+                      |         | 0 = XInput/WGI (try if hotplug misbehaves)
+  dinput              | 0       | 1 = enable SDL's DirectInput backend. Off
+                      |         | because it can freeze startup under Steam
+  hidapi, wgi, xinput | 1       | Other controller backend switches. Change
+                      |         | only to work around a driver problem
+  show_input          | 0       | 1 = show live stick X/Y on screen (testing)
+  background_input    | 0       | 1 = controllers keep working while the
+                      |         | game window is not focused. Keyboard and
+                      |         | mouse are still ignored then. Applies at
+                      |         | once
+
+Built-in controller layout: left stick moves, right stick looks, right
+trigger fires, left trigger aims, A uses, X reloads, Y and B change gadget,
+bumpers change weapon, both stick clicks crouch, Start pauses.
+
+Per-controller keys, written as pad1_... to pad4_... (padN_ below):
+  padN_rumble, padN_swap_sticks   Vibration; swap Move and Look sticks.
+  padN_gadget_switch=1            Z pressed while B is held = next gadget.
+  padN_lr_classic=1               Hold L+R for half a second to toggle
+                                  Classic Mode (N64-style pads).
+  padN_look_updown, padN_look_ahead, padN_auto_aim,
+  padN_detonate_use_reload        That player's own value of the matching
+                                  option (1 or 0). auto or empty follows
+                                  the global setting.
+  padN_<control>                  Button and stick bindings for that pad:
+                                  the N64 controls, stick_x/y (Move),
+                                  look_x/y (Look), move_up..move_right,
+                                  look_up..look_right, and every Port action.
+                                  Written by the binding screens.
+  padN_style, padN_inputmode, padN_layout, padN_layout_user, padN_calib
+                                  Control style, mode, layout and stick
+                                  calibration. Set from the menus and
+                                  launcher; leave them alone.
+
+Retired keys (ignored): mouse_mode, right_stick_c, twin_stick, always_walk,
+padN_stickmode.
+
+
+==============================================================================
+[display]  video, sound, HUD and gameplay
+==============================================================================
+
+  Key                 | Default    | What it does
+  --------------------+------------+----------------------------------------
+  Window
+  window_width        | 640        | Window width in pixels
+  window_height       | 480        | Window height in pixels
+  window_x, window_y, |            | Last window position and monitor. The
+  window_display      |            | game writes them on exit. Delete to
+                      |            | reset
+  fullscreen          | fullscreen | windowed, fullscreen (borderless window
+                      |            | over the display) or exclusive (true
+                      |            | fullscreen). 0 and 1 also work
+  widescreen          | 1          | 0 = stretch the 4:3 picture, 1 = widen
+                      |            | the 3D view to the window shape, 2 = 4:3
+                      |            | picture with black side bars
+  hfov_wide           | 90         | Horizontal field of view in degrees on a
+                      |            | 16:9 picture. 90 is the original view
+  weapon_fov          | 0          | 0 = the gun and hands widen with the
+                      |            | field of view (as N64), 1 = they keep
+                      |            | their size at the default view
+  pause_pillars       | 1          | Black side bars ease in while the watch
+                      |            | is open (wide windows only)
+  Frame rate
+  maxfps              | 120        | Frame rate cap. 0 = no cap, -1 = N64
+                      |            | pacing. Only lowers the rate; one game
+                      |            | tick runs per frame, so this also sets
+                      |            | the tick rate
+  tickhz              | (derived)  | Worked out from maxfps and rewritten by
+                      |            | the game. Do not edit; change maxfps
+  vsync               | 1          | 0 = never wait for vblank (tearing)
+  render_thread       | -1         | Draw on its own thread. -1 = auto,
+                      |            | 0 = off, 1 = on
+  Graphics
+  msaa                | 1          | 1 = off; 2, 4 or 8 = samples
+  filtering           | trilinear  | point, bilinear, 3point (N64-style) or
+                      |            | trilinear
+  anisotropy          | 0          | 0 = off; 2 to 16 = sharper textures at
+                      |            | glancing angles
+  filter_2d           | 0          | 0 = crisp HUD and menu graphics,
+                      |            | 1 = smoothed
+  low_res             | 0          | Level render height in lines, scaled up
+                      |            | to the window: 0 = window size,
+                      |            | 240 = the N64's, or 480, 720, 1080.
+                      |            | Frontend menus stay at window size
+  n64_aa              | 0          | 1 = N64-style edge anti-aliasing. Uses
+                      |            | MSAA (at least 4x); best with low_res=240.
+                      |            | Classic Mode: in solo play black side
+                      |            | pillars ease in for a 4:3 picture
+  classic_res         | 1          | Classic Mode parts (CLASSIC tab on the
+  classic_filter      | 1          | Video page): 1 = Classic Mode applies
+  classic_aniso       | 1          | that part, 0 = it leaves your own
+  classic_pacing      | 1          | setting. In order: 3D resolution,
+  classic_msaa        | 1          | texture filter, anisotropy, max fps,
+  classic_mipmaps     | 1          | MSAA, mipmaps, 2D filtering, the 4:3
+  classic_filter2d    | 1          | pillars, the load hitches (which also
+  classic_pillars     | 1          | need hardware pacing), the composite
+  classic_hitches     | 1          | video filter and N64 AA (the VI edge
+  classic_composite   | 1          | blend; off = plain MSAA edges, the
+  classic_n64aa       | 1          | other parts stay)
+  room_cache          | 2          | 2 = keep room geometry on the GPU
+                      |            | (faster), 0 = classic path. Forced off
+                      |            | with maxfps=-1
+  tri_hoist           | 1          | Renderer speed-up. 0 for testing only
+  shadow_alpha        | 65         | Shadow strength, % of the N64 value
+                      |            | (0 to 200; 100 = original)
+  distance_fading     | 0          | 1 = props and characters fade and cull
+                      |            | by distance; 0 = always opaque
+  scope_steady        | 0          | 1 = anchor Bond's head while sniper-
+                      |            | zoomed: no zoom drift, no head sway
+  HUD
+  crosshair_color     | default    | Hex RRGGBB (e.g. FF8000) for both
+                      |            | crosshairs; default = original red
+  health_wide         | 0          | 1 = health and armour arcs at the screen
+                      |            | edges; 0 = centred 4:3 area
+  always_crosshair    | 0          | 1 = small target at the gun's aim point
+                      |            | when not aiming
+  mission_timer       | 1          | Elapsed time (MM:SS:MS) bottom-left in
+                      |            | solo missions
+  hud_scale           | 0          | 1 = draw the in-game HUD as on a 640x480
+                      |            | screen: same places, half size (text,
+                      |            | ammo, timer, radar, sight; the health
+                      |            | and armour arcs keep their full size).
+                      |            | Needs 480 or more rendered lines (not
+                      |            | Low Res 240 or Classic Mode)
+  watch_static        | 1          | 0 removes the watch's static and sound
+  fast_pause          | 0          | 1 = the watch opens and closes at the
+                      |            | top speed the game reaches by itself
+                      |            | (after about 7 pauses in a level)
+  show_fps            | 0          | 1 = frames per second in small digits
+                      |            | in the top-left corner during play
+  setting_help        | 1          | 1 = a box under the folder's option
+                      |            | pages says what the highlighted
+                      |            | setting does. Not on the watch
+  armor_hud           | 0          | 1 = health and armour arcs show briefly
+                      |            | when you pick up body armour (as XBLA)
+  Sound
+  music_volume        | 100        | 0 to 100 percent, from startup
+  sfx_volume          | 100        | 0 to 100 percent, from startup
+  stereo_pan          | 1          | 1 = effects pan by position, 0 = centred
+                      |            | (as N64). Solo only
+  mute_unfocused      | 0          | 1 = silent while the game window is not
+                      |            | focused; sound returns at your volumes
+                      |            | when it is focused again
+  Player options (global, not per save file)
+  look_updown         | 1          | 1 = upright, 0 = reverse (inverted)
+                      |            | up/down look. Also on the Mouse and
+                      |            | Keyboard pages (folder and watch)
+  auto_aim            | 1          | Auto-aim
+  mouse_auto_aim      | 0          | 1 = allow auto-aim when aiming with the
+                      |            | mouse. 0 = never on the mouse, whatever
+                      |            | auto_aim or the multiplayer settings say
+  aim_control         | 0          | 0 = hold to aim, 1 = toggle
+  sight_on_screen     | 1          | Show the aiming sight
+  look_ahead          | 1          | Look Ahead
+  ammo_on_screen      | 1          | Show ammo on screen
+  Gameplay
+  aim_lock            | 0          | 1 = crosshair fixed at screen centre;
+                      |            | aiming turns the view and the gun does
+                      |            | not sway while turning
+  head_roll           | 1          | 0 = no camera tilt with head animation
+                      |            | and no idle breathing sway. (Old
+                      |            | no_head_roll=1 is read as 0)
+  fix_shootthrough    | 1          | 1 fixes shots passing through walls near
+                      |            | room portals; 0 = original bug
+  true_enemy_rockets  | 1          | 0 restores the original Enemy Rockets
+                      |            | cheat bug (guards keep old weapon)
+  unlimited_explosions| 1          | 100 explosions at once instead of 6.
+                      |            | Demo playback always uses 6
+  adzy                | 0          | 1 = play missions as the Siberian
+                      |            | Special Forces model. Cosmetic
+  unlock_all          | 0          | 1 = every mission, difficulty and cheat
+                      |            | selectable. Saves still record
+  Multiplayer (read only with 2 or more players)
+  mp_aim_lock         | 0          | Same as aim_lock
+  mp_sight_on_screen  | 1          | Same as sight_on_screen
+  mp_no_auto_aim      | 0          | 1 = auto-aim off for all players
+  mp_show_names       | 1          | Player name in each view's corner
+  mp_hud_wide         | 0          | HUD at viewport edges, not centred 4:3
+  mp_pillarbox        | 0          | Match in a centred 4:3, black side bars
+  mp_always_crosshair | 0          | Same as always_crosshair
+  mp_fix_shootthrough | 1          | Same as fix_shootthrough
+  mp_head_roll        | 1          | Same as head_roll
+  mp_unlimited_explosions | 1      | Same as unlimited_explosions
+  mp_spawn_weapon     | 0          | Spawn with weapon-set slot 1, drawn,
+                      |            | with 4x its pickup ammo
+  mp_random_spawns    | 0          | Random spawn pads instead of in turn
+  p1_ends_match       | 1          | 1 = player 1's Start on the end screen
+                      |            | returns everyone to the menu; 0 = all
+                      |            | players must confirm
+  Multiplayer cheats (1 = on for every player of a 2+ player match)
+  mp_invisibility, mp_dk_mode, mp_tiny_players, mp_paintball, mp_no_radar,
+  mp_turbo_mode, mp_unlimited_ammo      all default 0
+  mp_ltk_health       | 0          | Licence to Kill one-hit kills, any mode
+  mp_no_armor         | 0          | No body armour pickups on the maps
+  mp_friendly_fire    | 1          | 0 = team-mates can't hurt each other in
+                      |            | 2v2, 3v1 and 2v1
+
+Retired keys (ignored): composite.
+Older names, still read when the new key is missing: hfov and fov (now
+hfov_wide), mp_auto_aim (now mp_no_auto_aim), no_head_roll (now head_roll).
+mipmaps is set by Classic Mode; leave it as it is.
+
+
+==============================================================================
+[data]  optional
+==============================================================================
+
+  Key  | Default | What it does
+  -----+---------+-----------------------------------------------------------
+  rom  | (none)  | Path to your GoldenEye 007 (USA) ROM. A relative path is
+       |         | read from the game's folder. Not needed if the ROM is in
+       |         | the Data folder. See Data/README.txt for the full order.
+
+
+==============================================================================
+Data/Devices/kbm.gedevice [binds]  keyboard and mouse bindings
+==============================================================================
+
+The keyboard's device record. Its [binds] section holds one line per
+control:  control=key names.  Empty value = unbound. The other sections
+in this file are managed by the game.
+
+Key name syntax
+  - Up to 4 names per control, separated by commas. Any one triggers it.
+  - SDL key names: "W", "5", "Up", "Space", "Return", "Tab", "Left Shift",
+    "Left Ctrl", "Keypad Enter", "F1", and so on.
+  - Names are physical key positions, so WASD is the same cluster on any
+    keyboard layout.
+  - The comma key is written "Comma".
+  - Mouse: "Mouse Left", "Mouse Right", "Mouse Middle", "Mouse X1",
+    "Mouse X2", "Mouse Wheel Up", "Mouse Wheel Down".
+  - The wheel cannot be used for held actions: walk, crouch_hold, zoom_in,
+    zoom_out.
+  - Escape and the backquote key are fixed and cannot be bound.
+  - An unknown name is ignored and logged.
+
+N64 controls
+  Key           | Default     | What it does
+  --------------+-------------+----------------------------------------------
+  a             |             | N64 A button
+  b             |             | N64 B button
+  z             | Mouse Left  | Z trigger (fire)
+  l             |             | L button
+  r             | Mouse Right | R button (aim)
+  start         | Return      | Start
+  c_up          | W           | C buttons (lean and zoom in aim mode)
+  c_down        | S           |
+  c_left        | A           |
+  c_right       | D           |
+  dpad_up       |             | N64 D-pad
+  dpad_down     |             |
+  dpad_left     |             |
+  dpad_right    |             |
+  analog_up     | W           | Move stick at full deflection (walk, strafe)
+  analog_down   | S           |
+  analog_left   | A           |
+  analog_right  | D           |
+  look_up       |             | Keyboard Look stick at full deflection.
+  look_down     |             | Unbound: the mouse is used to look.
+  look_left     |             |
+  look_right    |             |
+
+Port actions (extra actions beyond the N64 pad)
+  Key              | Default          | What it does
+  -----------------+------------------+--------------------------------------
+  reload           | R                | Reload without using anything
+  use              | E                | The B action: doors, pickups, tank
+  walk             | Left Shift       | Half speed while held
+  prev_weapon      | Mouse Wheel Up   | Previous weapon
+  next_weapon      | Mouse Wheel Down | Next weapon
+  prev_inventory   | [                | Previous non-gun item (explosives,
+  next_inventory   | Q                | next one, keys, data devices...)
+  crouch_toggle    |                  | Press to crouch or stand
+  crouch_hold      | Left Ctrl        | Crouch while held
+  watch_prev       | Comma            | Watch page left
+  watch_next       | .                | Watch page right
+  watch_up         | Up               | Watch menu up one row (hold to repeat)
+  watch_down       | Down             | Watch menu down one row (hold to repeat)
+  watch_objectives |                  | Open watch on the objectives page
+  detonate         |                  | Detonate remote mines
+  zoom_in          |                  | Zoom in while aiming (held)
+  zoom_out         |                  | Zoom out while aiming (held)
+  menu_accept      |                  | Menu-only accept
+  menu_back        |                  | Menu-only back
+  mouse_unlock     | F1               | Release or re-grab the mouse pointer
+  classic_toggle   | Tab              | Switch Classic Mode on or off
+
+Retired keys (ignored): run, walk_toggle.
+
+
+Other keys you may see are managed by the game; leave them as they are.

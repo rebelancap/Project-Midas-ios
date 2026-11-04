@@ -1,0 +1,326 @@
+#Git and VS files
+.*~
+__pycache__/*
+.vscode/
+.[vV][sS]/
+
+*.rz
+*.tmp
+*.o
+branchdiff.sh
+branchdiff_report.txt
+*.dump
+*.cdata*
+/StructLayoutSettings.json
+# rom files
+*.[zZnN]64
+*.pyc
+
+021990.bin
+0219D0.bin
+
+# Assets - entirely derived/extracted from the copyrighted ROM (baserom.u.z64)
+# via scripts/extract_baserom.u.sh + the Python model/asset generators, OR
+# contain ROM data reconstructed byte-for-byte as C arrays (fonts, animation
+# tables, the Rareware logo). NEVER commit ROM-derived content: regenerate
+# locally instead (see docs/port/ and scripts/).
+#
+# Default-deny the whole tree, then explicitly allow-list only the
+# hand-written build scaffolding (Makefile fragments - no ROM bytes) that
+# `make` unconditionally `include`s and therefore must exist for ANY build
+# (including CI, which starts from a clean checkout). Anything not
+# explicitly allow-listed below stays ignored, so new files added under
+# assets/ are excluded by default rather than accidentally committed.
+/assets/*
+!/assets/Makefile.music
+!/assets/Makefile.obseg
+!/assets/images.def
+!/assets/image_externs.h
+!/assets/romfiles2.s
+!/assets/oddtextures.c
+!/assets/oddtextures.h
+!/assets/animationtable_data.c
+!/assets/animationtable_data.h
+!/assets/animationtable_entries.c
+!/assets/animationtable_entries.h
+!/assets/rarewarelogo.c
+!/assets/font_dl.c
+!/assets/font_dl.h
+!/assets/font_chardatae.c
+!/assets/font_chardataj.c
+!/assets/font/
+/assets/font/*
+!/assets/font/fontBankGothic.c
+!/assets/font/fontZurichBold.c
+!/assets/embedded/
+/assets/embedded/*
+!/assets/embedded/skeletons/
+/assets/embedded/skeletons/*
+!/assets/embedded/skeletons/*.inc.c
+!/assets/embedded/player_gait_object/
+/assets/embedded/player_gait_object/*
+!/assets/embedded/player_gait_object/*.inc.c
+!/assets/obseg/
+/assets/obseg/*
+!/assets/obseg/Makefile.filelist
+!/assets/obseg/Makefile.bg
+!/assets/obseg/Makefile.chr
+!/assets/obseg/Makefile.gun
+!/assets/obseg/Makefile.prop
+!/assets/obseg/Makefile.stan
+!/assets/obseg/Makefile.brief
+!/assets/obseg/Makefile.setup
+!/assets/obseg/Makefile.text
+!/assets/obseg/obseg.h
+!/assets/obseg/file_resource_id_enums.h
+!/assets/obseg/file_resource_table.inc.c
+
+# gun/chr/prop: each item's directory holds hand-authored reverse-engineered
+# METADATA (file header macros, weapon stat structs, position offsets, and
+# string references BY SYMBOLIC ID like getStringID(LGUN, GUN_STR_83_LF) -
+# no literal copyrighted text/geometry/pixels) ALONGSIDE Model.c (the actual
+# ROM-derived model geometry/texture data - stays denied, never commit).
+# generate_{gun,chr,prop}_model_c.py requires the item directory to already
+# exist or it skips the item entirely ("Missing metadata directory").
+!/assets/obseg/gun/
+/assets/obseg/gun/*
+!/assets/obseg/gun/gunModelFileHeaders.inc.c
+!/assets/obseg/gun/gunModelFileRecord.inc.c
+!/assets/obseg/gun/gunWeaponStats.inc.c
+!/assets/obseg/gun/*/
+/assets/obseg/gun/*/*
+!/assets/obseg/gun/*/ModelFileHeader.inc.c
+!/assets/obseg/gun/*/gunFileRecord.inc.c
+!/assets/obseg/gun/*/gunWeaponStat.inc.c
+
+!/assets/obseg/chr/
+/assets/obseg/chr/*
+!/assets/obseg/chr/chrModelFileHeaders.inc.c
+!/assets/obseg/chr/chrModelFileRecords.inc.c
+!/assets/obseg/chr/chrHeadHats.inc.c
+!/assets/obseg/chr/*/
+/assets/obseg/chr/*/*
+!/assets/obseg/chr/*/modelFileHeader.inc.c
+!/assets/obseg/chr/*/chrModelFileRecord.inc.c
+
+!/assets/obseg/prop/
+/assets/obseg/prop/*
+!/assets/obseg/prop/propModelFileHeaders.inc.c
+!/assets/obseg/prop/propItemModelFileRecord.inc.c
+!/assets/obseg/prop/propExplosionDetailsRecords.inc.c
+!/assets/obseg/prop/propExplosionDetailsRecords-eu.inc.c
+!/assets/obseg/prop/*/
+/assets/obseg/prop/*/*
+!/assets/obseg/prop/*/ModelFileHeader.inc.c
+!/assets/obseg/prop/*/propFileRecord.inc.c
+
+# bg/brief/setup/stan: reconstructed level geometry/collision/mission-briefing
+# C source (structs, not raw ROM bytes) - required directly by the CMake
+# asset manifest (port/generated/asset_manifest.cmake) or transitively via
+# #include. Raw .bin extraction artifacts stay denied below.
+!/assets/obseg/bg/
+/assets/obseg/bg/*
+!/assets/obseg/bg/*.c
+!/assets/obseg/bg/*.h
+!/assets/obseg/bg/*.ld
+!/assets/obseg/bg/u/
+/assets/obseg/bg/u/*
+!/assets/obseg/bg/u/*.c
+!/assets/obseg/bg/u/*.h
+
+!/assets/obseg/brief/
+/assets/obseg/brief/*
+!/assets/obseg/brief/*.c
+!/assets/obseg/brief/Ubrief.h
+
+!/assets/obseg/setup/
+/assets/obseg/setup/*
+!/assets/obseg/setup/*.c
+!/assets/obseg/setup/stagesetup.h
+!/assets/obseg/setup/u/
+/assets/obseg/setup/u/*
+!/assets/obseg/setup/u/*.c
+
+!/assets/obseg/stan/
+/assets/obseg/stan/*
+!/assets/obseg/stan/*.c
+
+# text: base (US) game dialogue/UI text source, plus the u/ subfolder which
+# (despite the name) holds Japanese-text variants embedded in the US ROM
+# that the US build requires (e.g. LarecJ.c). True EU/JP region builds
+# (e/, j/) are unused here and stay denied.
+!/assets/obseg/text/
+/assets/obseg/text/*
+!/assets/obseg/text/*.c
+!/assets/obseg/text/*.h
+!/assets/obseg/text/u/
+/assets/obseg/text/u/*
+!/assets/obseg/text/u/*.c
+
+# --- legacy fine-grained patterns kept for reference/documentation; the
+# --- default-deny rule above already covers everything below. ---
+assets/animationtable_data.bin
+assets/animationtable_entries.bin
+assets/font/*.bin
+assets/ge007.e.118660.jfont_chardata.bin
+assets/ge007.j.118660.jfont_chardata.bin
+assets/jfont_dl.bin
+assets/font_chardataj.bin
+assets/font_chardatae.bin
+assets/ge007.u.29D160.Globalimagetable.bin
+assets/rarewarelogo.bin
+assets/ge007.u.2A4D50.usedby7F008DE4.bin
+assets/ge007.u.117880.jfont_dl.bin
+assets/ge007.u.117940.jfont_chardata.bin
+assets/ge007.u.123040.efont_chardata.bin
+assets/ge007.u.29E560.Globalimagetable_commandblock.bin
+#images
+assets/images/split/*.bin*
+assets/images/combined/*.bin*
+assets/images/out/*
+assets/images/split/png/*
+#music
+assets/music/*.bin
+assets/music/*.ctl
+assets/music/*.tbl
+assets/music/*.sbk
+assets/music/*.seq
+assets/music/*.aifc
+assets/music/*.aiff
+#obseg
+assets/obseg/bg/*.bin
+assets/obseg/bg/e/*.bin
+assets/obseg/chr/*/Model.c
+assets/obseg/gun/*/Model.c
+assets/obseg/ob__ob_end.seg
+assets/obseg/prop/*/Model.c
+assets/obseg/setup/*.bin
+assets/obseg/setup/[eju]/*.bin
+assets/obseg/stan/*.bin
+assets/obseg/text/*.bin
+assets/obseg/text/[eju]/*.bin
+assets/obseg/text/[ej]/*.c
+assets/ramrom/*.bin
+assets/ramrom/[eju]/*.bin
+# bin is required, but lets prevent accidental deletion
+bin/*
+build/*
+build-*/*
+notes/*
+!build/test.c
+!notes/StyleGuide.md
+#tools
+tools/extractor/*.o
+tools/extractor/extractor
+tools/aaa_rip/main.o
+tools/aaa_rip/aaa_rip
+tools/n64cksum
+tools/armips
+tools/gzipsrc/gzip
+tools/gzipsrc/*.o
+tools/report/report
+tools/report/index.html
+tools/report/JPN.htm
+tools/gaudio/*
+bondtypes_AI.h
+acpp_c.c
+as1_c.c
+cc_c.c
+cfe_c.c
+copt_c.c
+ugen_c.c
+ujoin_c.c
+uld_c.c
+umerge_c.c
+uopt_c.c
+usplit_c.c
+
+#exclude local user scripts in root folder
+/my_*.sh
+assets/obseg/em/data/alien8.seg
+assets/obseg/em/data/atic.seg
+assets/obseg/em/data/cookie.seg
+assets/obseg/em/data/gunfright.seg
+assets/obseg/em/data/jetman.seg
+assets/obseg/em/data/jetpac.seg
+assets/obseg/em/data/knightlore.seg
+assets/obseg/em/data/pssst.seg
+assets/obseg/em/data/sabre.seg
+assets/obseg/em/data/spec_rom.seg
+assets/obseg/em/data/under.seg
+
+scripts/local/
+scripts/make/local/
+scripts/__pycache__/generate_prop_model_c.cpython-310.pyc
+port_sweep/
+__pycache__/
+build_pc/
+cmake_*.log
+third_party/
+build_win/
+build_pc_video/
+nm_v.log
+win_conf.log
+build_asan/
+build_asan_docker/
+
+# Local recovery/backup dumps - never commit (may contain the assets/ tree)
+/backup/
+
+# packaged Windows releases (scripts/port/package_release.ps1) - binaries, never committed
+releases/
+build_linux/
+build_deck/
+
+# Local-only developer back-story notes (debug history moved out of source comments)
+docs/devnotes/
+
+# the docs live in the private repo
+/docs/
+
+# macOS arm64 AppleClang spike build (docs/port-ios/03-appleclang-spike.md)
+build-mac/
+
+# Our iOS-port docs are tracked (upstream keeps its docs in a private repo)
+!/docs/
+/docs/*
+!/docs/port-ios/
+
+# iOS dependency symlinks (scripts/bootstrap-deps.sh, work/deps-PROVENANCE.md)
+/work/
+
+# round 9b: the app (xcodegen output, Xcode DerivedData)
+/build/
+app/*.xcodeproj
+app/project.generated.yml
+
+# OTA staging (scripts/publish-ota.sh, round 9c): binaries are not committed
+ota/**/*.ipa
+ota/**/manifest-*.plist
+
+# round 10: the XBLA layer ($C/xbla: pictures and CAFF files decoded from the
+# user's own copy) and any copy of the release itself. Never committed; on the
+# Mac it lands in the build dir ($C is the exe dir), which is ignored already.
+/xbla/
+*.7z
+/Data/xbla/
+
+# Gate evidence (scripts/vision-validate.sh writes artifacts/sim/visionos/...);
+# the kept subset is copied into docs/port-ios/img|data/roundNN.
+/artifacts/
+
+# Release assets (round 58): the renamed IPAs and the GitHub release notes,
+# uploaded with `gh release create`, never committed.
+/dist/
+
+# Development process docs, round logs and personal OTA/signing infrastructure:
+# kept in the development history, never published.
+CLAUDE.md
+STATUS.md
+docs/port-ios/
+scripts/publish-ota.sh
+ota/
+artifacts/
+scripts/vision3d-*
+scripts/port/merge/
+dist/

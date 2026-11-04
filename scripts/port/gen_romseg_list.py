@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""ROM segment table for the runtime ROM loader (port/src/romdata.c).
+
+Emits port/generated/romseg_list.h: one ROMSEG(name, romstart, size, csvpath)
+row per ROM region that the port reaches through a _<name>SegmentRomStart
+symbol (the non-file-table half of the cart - docs/port/rom-asset-loading.md
+section 2).  Offsets and sizes come from scripts/filelist.u.csv, the same
+table the extraction scripts use, so the runtime table cannot drift from the
+extracted assets.  Two rows are not in that csv and are derived here:
+
+  cdata   0x21990 .. 0x33590 (src/boot.s: _cdataSegmentRomStart/End, the
+          1172 blob holding file_resource_table - romdata.c inflates it)
+  images  ob/ob_end.seg's end .. +3,075,872 (assets/images/combined/
+          combined.bin is byte-exact this span; there is no images row)
+
+Rows that are ONE segment made of SEVERAL csv rows (the two fonts: kerning +
+fontchartable) span from the first row's start to the last row's end, which
+matches the sizes port/src/segments.c backs them with today (0x24B0/0x3540).
+
+Regenerate (from anywhere; paths are relative to this script):
+
+    python3 scripts/port/gen_romseg_list.py
+
+Then commit the refreshed port/generated/romseg_list.h.
+"""
+import csv
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
+CSV = os.path.join(ROOT, "scripts", "filelist.u.csv")
+OUT = os.path.join(ROOT, "port", "generated", "romseg_list.h")
+
+CDATA_ROM_START = 0x21990          # src/boot.s _cdataSegmentRomStart
+CDATA_ROM_END = 0x33590            # src/boot.s _cdataSegmentRomEnd (inflate stub + code follow; no csv rows)
+IMAGES_SIZE = 3075872              # assets/images/combined/combined.bin
+
+# segment symbol stem -> csv path(s) it spans (first start .. last end)
+SEGS = [
+    ("fontdl",             ["assets/ge007.u.117880.jfont_dl.bin"]),
+    ("jfontchardata",      ["assets/ge007.u.117940.jfont_chardata.bin"]),
+    ("efontchardata",      ["assets/ge007.u.123040.efont_chardata.bin"]),
+    ("animation_entries",  ["assets/animationtable_entries.bin"]),
+    ("animation_data",     ["assets/animationtable_data.bin"]),
+    ("Globalimagetable",   ["assets/ge007.u.29D160.Globalimagetable.bin"]),
+    ("rarewarelogo",       ["assets/rarewarelogo.bin"]),
+    ("gunbarrel",          ["assets/ge007.u.2A4D50.usedby7F008DE4.bin"]),
+    ("ramrom_Dam_1",       ["assets/ramrom/ramrom_Dam_1.bin"]),
+    ("ramrom_Dam_2",       ["assets/ramrom/ramrom_Dam_2.bin"]),
+    ("ramrom_Facility_1",  ["assets/ramrom/ramrom_Facility_1.bin"]),
+    ("ramrom_Facility_2",  ["assets/ramrom/ramrom_Facility_2.bin"]),
+    ("ramrom_Facility_3",  ["assets/ramrom/ramrom_Facility_3.bin"]),
+    ("ramrom_Runway_1",    ["assets/ramrom/ramrom_Runway_1.bin"]),
+    ("ramrom_Runway_2",    ["assets/ramrom/ramrom_Runway_2.bin"]),
+    ("ramrom_BunkerI_1",   ["assets/ramrom/ramrom_BunkerI_1.bin"]),
+    ("ramrom_BunkerI_2",   ["assets/ramrom/ramrom_BunkerI_2.bin"]),
+    ("ramrom_Silo_1",      ["assets/ramrom/ramrom_Silo_1.bin"]),
+    ("ramrom_Silo_2",      ["assets/ramrom/ramrom_Silo_2.bin"]),
+    ("ramrom_Frigate_1",   ["assets/ramrom/ramrom_Frigate_1.bin"]),
+    ("ramrom_Frigate_2",   ["assets/ramrom/ramrom_Frigate_2.bin"]),
+    ("ramrom_Train",       ["assets/ramrom/ramrom_Train.bin"]),
+    ("fontbankgothic",     ["assets/font/fontBankGothic_kerning.bin",
+                            "assets/font/fontBankGothic_fontchartable.bin"]),
+    ("fontzurichbold",     ["assets/font/fontZurichBold_kerning.bin",
+                            "assets/font/fontZurichBold_fontchartable.bin"]),
+    ("sfxctl",             ["assets/music/sfx.ctl"]),
+    ("sfxtbl",             ["assets/music/sfx.tbl"]),
+    ("instrumentsctl",     ["assets/music/instruments.ctl"]),
+    ("instrumentstbl",     ["assets/music/instruments.tbl"]),
+    ("musicsampletbl",     ["assets/music/music.sbk"]),
+]
+
+
+def main():
+    rows = {}
+    order = []
+    with open(CSV, newline="") as f:
+        for r in csv.reader(f):
+            if len(r) < 3:
+                continue
+            ofs, size, path = int(r[0]), int(r[1]), r[2]
+            rows[path] = (ofs, size)
+            order.append((ofs, size, path))
+    order.sort()
+
+    out = []
+    # cdata: boot.s bounds (nothing between it and jfont_dl has a csv row)
+    out.append(("cdata", CDATA_ROM_START, CDATA_ROM_END - CDATA_ROM_START, "(src/boot.s _cdataSegmentRomStart..End)"))
+
+    for name, paths in SEGS:
+        for p in paths:
+            if p not in rows:
+                sys.exit("gen_romseg_list: %s not in %s" % (p, CSV))
+        start = rows[paths[0]][0]
+        end = rows[paths[-1]][0] + rows[paths[-1]][1]
+        out.append((name, start, end - start, " + ".join(paths)))
+
+    obend = rows["assets/obseg/ob__ob_end.seg"]
+    out.append(("images", obend[0] + obend[1], IMAGES_SIZE, "(ob/ob_end.seg end .. +combined.bin size)"))
+
+    with open(OUT, "w", newline="\n") as f:
+        f.write("/* GENERATED by scripts/port/gen_romseg_list.py from scripts/filelist.u.csv\n"
+                " * - do not edit. ROM regions the port reaches through _<name>SegmentRomStart\n"
+                " * symbols; romdata.c validates each against the loaded ROM and (from Phase B)\n"
+                " * repoints the symbols at it. ROMSEG(name, romstart, size, source) */\n")
+        f.write("#define ROMSEG_LIST() \\\n")
+        for name, start, size, src in out:
+            f.write("    ROMSEG(%-20s 0x%06X, 0x%06X, \"%s\") \\\n" % (name + ",", start, size, src))
+        f.write("    /* end */\n")
+        f.write("#define ROMSEG_COUNT %d\n" % len(out))
+    print("wrote %s (%d segments)" % (OUT, len(out)))
+
+
+if __name__ == "__main__":
+    main()

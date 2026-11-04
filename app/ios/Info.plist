@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Project Midas</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Project Midas</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+
+	<!-- Icons: the legacy CFBundleIconFiles list, with the PNGs at the bundle
+	     ROOT (app/project.yml adds them as loose resources). Xcode 26+'s actool
+	     rejects a classic single-size app-icon catalog ("a single 1024x1024
+	     image is not a valid iOS app icon set"), and this form is what the
+	     siblings ship and what the OTA install page reads. The art is a
+	     PLACEHOLDER (D-028) — scripts/make-app-icon.py draws it. -->
+	<key>CFBundleIconFiles</key>
+	<array>
+		<string>AppIcon60x60</string>
+		<string>AppIcon76x76</string>
+		<string>AppIcon83.5x83.5</string>
+		<string>AppIcon1024</string>
+	</array>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AppIcon60x60</string>
+			</array>
+			<key>CFBundleIconName</key>
+			<string>AppIcon</string>
+		</dict>
+	</dict>
+
+	<!-- MANDATORY since Xcode 27 / the iOS 27 SDK (PD's D-038, inherited).
+	     Without it UIKit trips
+	     __UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption on the
+	     FrontBoard scene-creation path and kills the process with
+	     EXC_BREAKPOINT before any of our code runs — on the device AND on the
+	     simulator, because it is the LINKED SDK that is checked. TN3187.
+
+	     One scene, GESceneDelegate, which also grafts SDL's sceneless UIWindow
+	     onto it: SDL 2.32.8 has no scene support and builds its window with
+	     -initWithFrame:, and with a manifest declared such a window appears in
+	     neither UIApplication.windows nor any scene's windows array, so nothing
+	     composites it — a black screen at a perfect frame rate. The key goes
+	     INSIDE the manifest dict; outside it, it is silently ignored. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>GESceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+		<string>metal</string>
+	</array>
+
+	<!-- The ROM (ge007.ntsc-final.z64), ge007.ini and ge007.eep live in
+	     Documents (D-016). Both keys together are what makes that folder show
+	     up in Files as "Project Midas" and be editable in place — which is the
+	     only way a user can supply the ROM on a device. The regenerable
+	     ROM-derived sidecars deliberately do NOT live here; they are in
+	     Library/Caches, which is neither Files-visible nor backed up. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+
+	<!-- Round 57 (docs/port-ios/77): the cartridge dump is an OPENABLE
+	     document, so AirDrop offers Project Midas for a .z64/.n64/.v64 and
+	     Files' share sheet / "Open in" lists it. Without a document type the
+	     onboarding's "AirDrop it" line could not work (doc 76 §4). The open
+	     lands in GESceneDelegate scene:openURLContexts: (iOS) or SwiftUI's
+	     onOpenURL (visionOS) -> +[GEOnboarding importROMAtURL:], which copies
+	     the file into Documents through the same classifier as Choose ROM….
+	     Our own imported UTI carries the three extensions; the other two
+	     identifiers are what Delta and Manic EMU declare for the same files,
+	     listed so the type still matches on a device where one of those apps
+	     claimed the extension first. Viewer + Alternate: we never own .z64. -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>N64 cartridge dump</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.rebelancap.projectmidas.n64-rom</string>
+				<string>com.rileytestut.delta.game.n64</string>
+				<string>public.aoshuang.game.n64</string>
+			</array>
+		</dict>
+	</array>
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.rebelancap.projectmidas.n64-rom</string>
+			<key>UTTypeDescription</key>
+			<string>N64 cartridge dump</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>z64</string>
+					<string>n64</string>
+					<string>v64</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+
+	<!-- Charter rule 3(e): the netplay seams are reserved from the FIRST
+	     build, and these two are the ones that have to exist before there is
+	     any netcode, because adding them later means every existing install
+	     has already been denied. LAN lockstep over the tailnet / local
+	     network is the Phase 7 target (research/03-netplay.md); the same key
+	     also covers the :8777 dev bridge when that lands. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Project Midas uses the local network to find and play with other players on the same Wi-Fi.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_projectmidas._udp</string>
+		<string>_projectmidas._tcp</string>
+	</array>
+
+	<!-- Insurance, not a feature: nothing in this app scans for Bluetooth.
+	     SDL's iOS HIDAPI backend opens a CBCentralManager when the Steam
+	     HIDAPI hint is on (upstream's inputInit sets it), and iOS TERMINATES
+	     an app that touches CoreBluetooth without this key. ge_ios_main.m
+	     overrides that hint off at OVERRIDE priority; if anything ever reaches
+	     CoreBluetooth anyway it must prompt, never abort. -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Project Midas can connect to Bluetooth game controllers.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Project Midas can connect to Bluetooth game controllers.</string>
+
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIStatusBarHidden</key>
+	<true/>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	<!-- 120 Hz is a Phase 3 question, but the key has to be present before the
+	     pacer can ever ask for it. -->
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+</dict>
+</plist>
