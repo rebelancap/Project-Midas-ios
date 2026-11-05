@@ -36,6 +36,7 @@ extern int geHostConfigSet(const char *key, const char *value);
 extern int geHostGameOptionGet(const char *name);
 extern int geHostGameOptionSet(const char *name, int value);
 extern int geHostInGameplay(void);
+extern void geHostPortActionClear(int src, int pad);   // hostinput.c, round 59
 extern void geHostFlushSaves(void);
 extern void geHostState(int *stage, float *fps, unsigned int *ticks, unsigned int *frames);
 // port/include/audio.h (D-089)
@@ -1918,6 +1919,7 @@ static CFTimeInterval sGameplaySince = 0.0;
 	// Nothing may stay held across the transition: a finger that was on FIRE
 	// when the page appeared has no touchesEnded to look forward to.
 	[GEInput setPad:(GEPad){0, 0, 0} forSource:GEInputSourceTouch];
+	geHostPortActionClear(0, -1);   // round 59: the touch source's Port actions too
 
 	sVC = [GESettingsVC new];
 	sWindow = [[UIWindow alloc] initWithWindowScene:scene];

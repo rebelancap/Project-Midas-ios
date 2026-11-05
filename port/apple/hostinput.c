@@ -244,6 +244,201 @@ void geHostGetPadLook(float *scaleX, float *scaleY)
     if (scaleY) *scaleY = g_portPadLookScaleY;
 }
 
+/* ---- round 59: Midas Port actions from the shell -------------------------
+ * docs/port-ios/79. The touch overlay's CROUCH and GADGET buttons, the
+ * aim-mode stick zoom, and the shell's own controller mapping (pads SDL does
+ * not hold) drive Midas's Port actions (port/src/joy_port.c) per pad, the
+ * same way a controller's custom map does: geHostInputPoll calls
+ * portJoyPortPadDown for every action held here BEFORE the Port commit, so
+ * the edge latch, the 0.25 s staleness, crouch_toggle's latch and the
+ * shoot_next_prev chord are all Midas's own code. A level (0..1) is kept
+ * as well, for the held actions read as a magnitude (zoom_in / zoom_out via
+ * portJoyPortLevel, GE_IOS arm). Sources compose by max: 0 = touch overlay,
+ * 1 = the shell's controller mapping. A press that comes and goes between
+ * two polls still counts for one poll (s_actPressed). Inert unless the shell
+ * calls it, like everything else in this file. */
+#define GE_HOST_ACT_SRCS 2
+#define GE_HOST_ACT_MAX  32
+static int s_actLevelMilli[GE_HOST_ACT_SRCS][GE_HOST_MAX_PADS][GE_HOST_ACT_MAX];
+static unsigned int s_actPressed[GE_HOST_MAX_PADS];
+static unsigned int s_actZoomPolls;
+
+extern s32 portJoyPortBindCount(void);
+extern const char *portJoyPortBindName(s32 i);
+extern void portJoyPortPadDown(s32 pad, s32 act);
+extern s32 portJoyPortActZoomIn(void);
+extern s32 portJoyPortActZoomOut(void);
+
+int geHostPortActionFind(const char *name)
+{
+    s32 n = portJoyPortBindCount();
+    s32 i;
+
+    if (name == NULL)
+    {
+        return -1;
+    }
+    if (n > GE_HOST_ACT_MAX)
+    {
+        n = GE_HOST_ACT_MAX;
+    }
+    for (i = 0; i < n; i++)
+    {
+        const char *b = portJoyPortBindName(i);
+
+        if (b != NULL && strcmp(b, name) == 0)
+        {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
+void geHostPortActionSet(int src, int pad, int act, float level)
+{
+    int milli;
+    int prev;
+
+    if (src < 0 || src >= GE_HOST_ACT_SRCS || pad < 0 || pad >= GE_HOST_MAX_PADS
+        || act < 0 || act >= GE_HOST_ACT_MAX)
+    {
+        return;
+    }
+    if (!(level > 0.0f))   /* also NaN */
+    {
+        milli = 0;
+    }
+    else
+    {
+        milli = (level >= 1.0f) ? 1000 : (int)(level * 1000.0f + 0.5f);
+        if (milli < 1)
+        {
+            milli = 1;
+        }
+    }
+    prev = AT_XCHG(&s_actLevelMilli[src][pad][act], milli);
+    if (milli > 0 && prev == 0)
+    {
+        __atomic_fetch_or(&s_actPressed[pad], 1u << act, __ATOMIC_RELAXED);
+    }
+}
+
+void geHostPortActionClear(int src, int pad)
+{
+    int p;
+    int a;
+
+    if (src < 0 || src >= GE_HOST_ACT_SRCS)
+    {
+        return;
+    }
+    for (p = 0; p < GE_HOST_MAX_PADS; p++)
+    {
+        if (pad >= 0 && p != pad)
+        {
+            continue;
+        }
+        for (a = 0; a < GE_HOST_ACT_MAX; a++)
+        {
+            AT_STORE(&s_actLevelMilli[src][p][a], 0);
+        }
+    }
+}
+
+static int geHostActMilli(int pad, int act)
+{
+    int best = 0;
+    int s;
+
+    for (s = 0; s < GE_HOST_ACT_SRCS; s++)
+    {
+        const int v = AT_LOAD(&s_actLevelMilli[s][pad][act]);
+
+        if (v > best)
+        {
+            best = v;
+        }
+    }
+    return best;
+}
+
+/* joy_port.c portJoyPortLevel, GE_IOS arm: the shell's level for one action. */
+f32 geHostPortActionLevel(s32 pad, s32 act)
+{
+    if (pad < 0 || pad >= GE_HOST_MAX_PADS || act < 0 || act >= GE_HOST_ACT_MAX)
+    {
+        return 0.0f;
+    }
+    return (f32)geHostActMilli((int)pad, (int)act) / 1000.0f;
+}
+
+/* geHostInputPoll, before the Port commit: hold every shell action down for
+ * this poll on its pad. */
+static void geHostPortActionsPoll(void)
+{
+    const s32 zi = portJoyPortActZoomIn();
+    const s32 zo = portJoyPortActZoomOut();
+    int pad;
+    int a;
+
+    for (pad = 0; pad < GE_HOST_MAX_PADS; pad++)
+    {
+        const unsigned int pressed = AT_XCHG(&s_actPressed[pad], 0u);
+
+        for (a = 0; a < GE_HOST_ACT_MAX; a++)
+        {
+            if (geHostActMilli(pad, a) > 0 || ((pressed >> a) & 1u))
+            {
+                portJoyPortPadDown(pad, a);
+            }
+        }
+    }
+    if (geHostActMilli(0, (int)zi) > 0 || geHostActMilli(0, (int)zo) > 0)
+    {
+        AT_ADD(&s_actZoomPolls, 1u);
+    }
+}
+
+/* Player 1 is in aim mode right now (the touch stick zooms instead of
+ * walking). Racy word read from the main thread; 0 when there is no player. */
+int geHostPlayerAiming(void)
+{
+    struct player *p = g_playerPointers[0];
+
+    if (g_StageNum <= 0 || g_StageNum == LEVELID_TITLE || p == NULL)
+    {
+        return 0;
+    }
+    return p->insightaimmode != 0;
+}
+
+/* D-138 contract (hostinput.h), real on Midas since round 59: player 1's aim
+ * mode, right-hand weapon, sniper FOV, camera zoom FOV, lean target, crouch
+ * position, and the polls a shell zoom level was held on. */
+void geHostAimState(int *aiming, int *weapon, float *sniperZoom, float *fovy,
+                    float *sway, int *crouch, unsigned int *zoomPolls)
+{
+    struct player *p = g_playerPointers[0];
+
+    if (aiming) *aiming = -1;
+    if (weapon) *weapon = -1;
+    if (sniperZoom) *sniperZoom = 0;
+    if (fovy) *fovy = 0;
+    if (sway) *sway = 0;
+    if (crouch) *crouch = 0;
+    if (zoomPolls) *zoomPolls = AT_LOAD(&s_actZoomPolls);
+    if (g_StageNum <= 0 || g_StageNum == LEVELID_TITLE || p == NULL)
+    {
+        return;
+    }
+    if (aiming) *aiming = (int)p->insightaimmode;
+    if (weapon) *weapon = (int)p->hands[GUNRIGHT].weaponnum;
+    if (sniperZoom) *sniperZoom = p->sniper_zoom;
+    if (fovy) *fovy = p->zoominfovy;
+    if (sway) *sway = p->swaytarget;
+    if (crouch) *crouch = (int)p->crouchpos;
+}
+
 /* libultra_shim.c contConnectedMask, GE_IOS arm: the ports the shell
  * publishes are plugged in. */
 unsigned int geHostPadMask(void)
@@ -429,6 +624,7 @@ void geHostInputPoll(void *pads)
         data[i].stick_x = geHostStickAdd(data[i].stick_x, sx);
         data[i].stick_y = geHostStickAdd(data[i].stick_y, sy);
     }
+    geHostPortActionsPoll();   /* round 59: before the Port commit */
 }
 
 /* The donor installs a playback hook here; Midas needs none (the merge is a

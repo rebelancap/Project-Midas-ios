@@ -18,6 +18,35 @@
 extern void *geAngleGetHostView(void);
 // port/src/hostinput.c (D-062)
 extern void geHostReloadOnlySet(int on);
+// port/apple/hostinput.c (round 59, docs/port-ios/79): Midas Port actions.
+extern int  geHostPortActionFind(const char *name);
+extern void geHostPortActionSet(int src, int pad, int act, float level);
+extern void geHostPortActionClear(int src, int pad);
+extern int  geHostPlayerAiming(void);
+// The overlay's source in hostinput.c's composition (1 = GEController).
+static const int kActSrcTouch = 0;
+
+/// Index of a Port action by name, cached (the table is static in the engine).
+static int geActIndex(const char *name)
+{
+	static NSMutableDictionary<NSString *, NSNumber *> *cache;
+	if (!name) {
+		return -1;
+	}
+	if (!cache) {
+		cache = [NSMutableDictionary dictionary];
+	}
+	NSString *k = @(name);
+	NSNumber *n = cache[k];
+	if (!n) {
+		n = @(geHostPortActionFind(name));
+		cache[k] = n;
+		if (n.intValue < 0) {
+			GELog(@"[touch] Port action \"%s\" is not in this engine", name);
+		}
+	}
+	return n.intValue;
+}
 
 static const CGFloat kStickRegionFrac = 0.45f;  // the left share of the screen
 static const CGFloat kStickRadius     = 62.0f;  // points of travel to full deflection
@@ -73,6 +102,10 @@ extern int geHostSplitScreenPlayers(void);
 
 	// Bridge-driven presses, which have no UITouch at all.
 	NSMutableSet<NSString *> *_bridgeHeld;
+	// Round 59: the bridge's stick-zone `drag`, as zoom levels while aiming
+	// (the drag's pad itself goes in on GEInputSourceBridge, as before).
+	float _bridgeZoomIn;
+	float _bridgeZoomOut;
 
 	// The finger holding AIM doubles as an aim surface: press-and-drag moves
 	// the view without a second finger, which is what makes aim mode usable
@@ -243,6 +276,7 @@ static GETouchOverlay *sShared = nil;
 	if (v.hidden) {
 		// Everything the overlay was holding goes with it.
 		[GEInput setPad:(GEPad){0, 0, 0} forSource:GEInputSourceTouch];
+		geHostPortActionClear(kActSrcTouch, -1);
 	}
 #if TARGET_OS_VISION
 	GELog(@"[touch] overlay %@ (Touch.Enabled=%ld, pad %@, pad-used %@, split-screen %d, 3d %d)",
@@ -461,6 +495,31 @@ static void gePadFromStick(CGFloat ux, CGFloat uy, GEPad *pad)
 
 #pragma mark - publishing
 
+/// Round 59 (docs/port-ios/79): AIM is held on the glass (a finger or the
+/// bridge), or the game is in aim mode anyway (Aim Mode = toggle, or a pad).
+- (BOOL)aimActive
+{
+	return [_held containsObject:@"AIM"] || [_bridgeHeld containsObject:@"AIM"]
+	    || geHostPlayerAiming();
+}
+
+/// Round 59, Austin's design: while aiming, the stick's Y is ZOOM (up =
+/// zoom_in, down = zoom_out, a level, so a small push zooms slowly) and its X
+/// stays LEAN (Midas leans from the Move X past 30 of 85, bondview2.c). The
+/// pad's Y is zeroed, so the push neither walks nor ducks (Midas's port-driven
+/// aim mode ducks on Move Y < -30 for guns that can crouch). Only the sniper
+/// rifle and the camera zoom; the engine gates that (bondview2.c).
+static void geAimStick(GEPad *pad, CGFloat uy, float *zoomIn, float *zoomOut)
+{
+	pad->stickY = 0;
+	// Round 60: Austin on 1.0.0.1, "a little too fast". A full push used to
+	// be level 1.0 = the N64 C-button rate; a thumb on glass has less travel
+	// than a real stick, so the touch stick tops out at half that.
+	static const double kTouchZoomScale = 0.5;
+	*zoomIn  = (float)(MAX(0.0, -uy) * kTouchZoomScale);   // UIKit y is down-positive
+	*zoomOut = (float)(MAX(0.0, uy) * kTouchZoomScale);
+}
+
 /// Recompute the whole touch contribution and hand it to GEInput. Called on
 /// every touch event; cheap, and being total rather than incremental is what
 /// makes a lost touchesCancelled impossible to notice.
@@ -483,18 +542,41 @@ static void gePadFromStick(CGFloat ux, CGFloat uy, GEPad *pad)
 	               && !([_held containsObject:@"USE"] || [_bridgeHeld containsObject:@"USE"]);
 	geHostReloadOnlySet(reloadOnly ? 1 : 0);
 
+	float zoomIn = 0.0f, zoomOut = 0.0f;
+	const BOOL aiming = [self aimActive];
 	if (_stickTouch) {
 		CGFloat ux = 0, uy = 0;
 		geStickResponse(_stickCurrent.x - _stickOrigin.x,
 		                _stickCurrent.y - _stickOrigin.y,
 		                [self stickRadius], &ux, &uy);
 		gePadFromStick(ux, uy, &pad);
+		if (aiming) {
+			geAimStick(&pad, uy, &zoomIn, &zoomOut);
+		}
+	}
+	if (aiming) {
+		zoomIn  = MAX(zoomIn,  _bridgeZoomIn);
+		zoomOut = MAX(zoomOut, _bridgeZoomOut);
 	}
 
 	// While AIM is held the C buttons are lean and crouch, not sidestep.
 	// Nothing here sets C-left or C-right. hostinput.c synthesises that pair
 	// only for an N64-styled pad. A port-driven stick keeps its analog X,
 	// which aim mode already reads as lean.
+
+	// Round 59: the buttons that are Midas Port actions (CROUCH =
+	// crouch_toggle, GADGET = next_inventory), and the aim-mode zoom.
+	const GETouchButton *bs = GETouchLayout.buttons;
+	for (NSInteger i = 0; i < GETouchLayout.count; i++) {
+		if (!bs[i].portAction) {
+			continue;
+		}
+		NSString *name = @(bs[i].name);
+		BOOL down = [_held containsObject:name] || [_bridgeHeld containsObject:name];
+		geHostPortActionSet(kActSrcTouch, 0, geActIndex(bs[i].portAction), down ? 1.0f : 0.0f);
+	}
+	geHostPortActionSet(kActSrcTouch, 0, geActIndex("zoom_in"), zoomIn);
+	geHostPortActionSet(kActSrcTouch, 0, geActIndex("zoom_out"), zoomOut);
 
 	[GEInput setPad:pad forSource:GEInputSourceTouch];
 	[self invalidateControls];
@@ -727,9 +809,9 @@ static BOOL geButtonDragsLook(NSString *name)
 	     w ? NSStringFromClass(w.class) : @"none", (double)(w ? w.windowLevel : 0)];
 	for (NSInteger i = 0; i < GETouchLayout.count; i++) {
 		CGPoint c = [self centreOf:&bs[i]];
-		[out appendFormat:@"button=%s x=%.0f y=%.0f r=%.0f unit=%.4f,%.4f bits=0x%04x glyph=%s action=%s\n",
+		[out appendFormat:@"button=%s x=%.0f y=%.0f r=%.0f unit=%.4f,%.4f bits=0x%04x port=%s glyph=%s action=%s\n",
 		     bs[i].name, c.x, c.y, [self radiusOf:&bs[i]], bs[i].unitX, bs[i].unitY,
-		     bs[i].bits, bs[i].glyph, bs[i].action];
+		     bs[i].bits, bs[i].portAction ?: "-", bs[i].glyph, bs[i].action];
 	}
 	{
 		GETouchButton lf = GETouchLayout.leftFire;
@@ -758,8 +840,10 @@ static BOOL geButtonDragsLook(NSString *name)
 		[self->_bridgeHeld removeObject:name];
 		[self publish];
 	});
-	return [NSString stringWithFormat:@"tap=OK button:%@ bits=0x%04x hold=%.2fs",
-	        name, bits, seconds];
+	NSInteger ti = [GETouchLayout indexOfName:name];
+	const char *pa = (ti >= 0) ? GETouchLayout.buttons[ti].portAction : NULL;
+	return [NSString stringWithFormat:@"tap=OK button:%@ bits=0x%04x port=%s hold=%.2fs",
+	        name, bits, pa ?: "-", seconds];
 }
 
 - (NSString *)bridgeDragAt:(CGPoint)p by:(CGVector)d
@@ -771,9 +855,17 @@ static BOOL geButtonDragsLook(NSString *name)
 		CGFloat ux = 0, uy = 0;
 		geStickResponse(d.dx, d.dy, [self stickRadius], &ux, &uy);
 		gePadFromStick(ux, uy, &pad);
+		// Round 59: the same aim-mode rule as a finger (-publish): Y zooms,
+		// X leans. Decided at drag time; `drag <x> <y> 0 0` releases.
+		const BOOL aiming = [self aimActive];
+		_bridgeZoomIn = _bridgeZoomOut = 0.0f;
+		if (aiming) {
+			geAimStick(&pad, uy, &_bridgeZoomIn, &_bridgeZoomOut);
+		}
 		[GEInput setPad:pad forSource:GEInputSourceBridge];
-		return [NSString stringWithFormat:@"drag=stick stick_x=%d stick_y=%d",
-		        (int)pad.stickX, (int)pad.stickY];
+		[self publish];
+		return [NSString stringWithFormat:@"drag=stick stick_x=%d stick_y=%d aim=%d zoom_in=%.2f zoom_out=%.2f",
+		        (int)pad.stickX, (int)pad.stickY, (int)aiming, _bridgeZoomIn, _bridgeZoomOut];
 	}
 
 	const double degPerPtX = [GEDefaults doubleFor:GEDefaultsLookDegPerPoint];
@@ -951,7 +1043,9 @@ static void geEditStroke(CGContextRef ctx, CGPoint c, CGFloat r, CGFloat alpha, 
 	_stickTouch = nil;
 	_lookTouch = nil;
 	_aimDragTouch = nil;
+	_bridgeZoomIn = _bridgeZoomOut = 0.0f;
 	[GEInput setPad:(GEPad){0, 0, 0} forSource:GEInputSourceTouch];
+	geHostPortActionClear(kActSrcTouch, -1);
 
 	[GETouchOverlay applyVisibility];
 	[self buildEditBar];

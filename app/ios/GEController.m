@@ -17,6 +17,42 @@ extern void geHostPadStats(unsigned int *sets, unsigned int *edges,
 extern int geHostSdlPadsOpen(void);
 // Round 57 (docs/port-ios/77): port/apple/hostinput.c, read by bondview2.c.
 extern void geHostSetPadLook(float scaleX, float scaleY, int invert);
+// Round 59 (docs/port-ios/79): Midas Port actions per port.
+extern int  geHostPortActionFind(const char *name);
+extern void geHostPortActionSet(int src, int pad, int act, float level);
+extern void geHostPortActionClear(int src, int pad);
+// This file's source in hostinput.c's composition (0 = the touch overlay).
+static const int kActSrcPad = 1;
+
+/// Round 59: the Port actions one controller holds this poll, as levels.
+/// Mirrors Midas's own default pad layout ("Xbox Standard",
+/// tools/gamecontrollerdefault.txt), which is what every REAL controller gets
+/// (SDL owns those since round 9c); this mapping only serves the pads SDL
+/// does not hold (the dev bridge's virtual pads).
+typedef struct {
+	float crouchToggle;   // L3
+	float nextInv;        // B / circle: next gadget
+	float reload;         // X / square
+	float zoomIn;         // left stick up, while aiming
+	float zoomOut;        // left stick down, while aiming
+} GEPadActs;
+
+static void geApplyActs(int port, const GEPadActs *a)
+{
+	static int iCrouch = -2, iNextInv, iReload, iZoomIn, iZoomOut;
+	if (iCrouch == -2) {
+		iNextInv = geHostPortActionFind("next_inventory");
+		iReload  = geHostPortActionFind("reload");
+		iZoomIn  = geHostPortActionFind("zoom_in");
+		iZoomOut = geHostPortActionFind("zoom_out");
+		iCrouch  = geHostPortActionFind("crouch_toggle");
+	}
+	geHostPortActionSet(kActSrcPad, port, iCrouch,  a->crouchToggle);
+	geHostPortActionSet(kActSrcPad, port, iNextInv, a->nextInv);
+	geHostPortActionSet(kActSrcPad, port, iReload,  a->reload);
+	geHostPortActionSet(kActSrcPad, port, iZoomIn,  a->zoomIn);
+	geHostPortActionSet(kActSrcPad, port, iZoomOut, a->zoomOut);
+}
 
 @implementation GEController
 
@@ -193,6 +229,7 @@ static NSInteger gePublishSlotsLocked(void)
 	} else {
 		[GEInput setPad:(GEPad){0, 0, 0} forPort:slot];
 	}
+	geHostPortActionClear(kActSrcPad, slot);   // round 59: its Port actions too
 	[GEInput setPortCount:count];
 	GELog(@"[pad] controller %d (%@) disconnected — port %d free, the game sees %ld",
 	      slot + 1, geName(c), slot, (long)count);
@@ -318,11 +355,13 @@ static void geRadialDeadzone(float *x, float *y, float dz)
 /// One controller's state -> one N64 pad + look degrees, for EVERY port (D-233:
 /// there is exactly one copy of the twin-stick scheme). `moved` = a human did
 /// something this poll (D-041's evidence).
-static void geMapGamepad(GCExtendedGamepad *g, double dt, GEPad *outPad, GELook *outLook, BOOL *moved)
+static void geMapGamepad(GCExtendedGamepad *g, double dt, GEPad *outPad, GELook *outLook,
+                         GEPadActs *outActs, BOOL *moved)
 {
 	const float dz = (float)[GEDefaults doubleFor:GEDefaultsPadDeadzone];
 	GEPad pad = (GEPad){0, 0, 0};
 	GELook look = (GELook){0.0f, 0.0f};
+	GEPadActs acts = (GEPadActs){0};
 
 	// ---- left stick: move + sidestep --------------------------------------
 	float lx = g.leftThumbstick.xAxis.value;
@@ -376,13 +415,21 @@ static void geMapGamepad(GCExtendedGamepad *g, double dt, GEPad *outPad, GELook 
 	// and not look. Drop the synthesised pitch pair from the right stick.
 	// The left stick's sidestep is hostinput.c's, and only when the pad is
 	// N64-styled; a port-driven pad keeps analog X, which aim mode reads as
-	// lean. This happens before the real buttons are OR'd in, so a deliberate
-	// CROUCH survives it.
+	// lean. This happens before the real buttons are OR'd in, so a d-pad
+	// press (the N64 aim + C-down crouch) survives it.
 	const float trig = 0.35f;   // an analog trigger is a button past a third
-	BOOL aiming = (g.leftTrigger.value > trig) || g.leftShoulder.isPressed
-	              || g.buttonB.isPressed;   // crouch implies aim mode; see below
+	// Round 59: B no longer implies aim (it was the R + C-down crouch chord;
+	// crouch is Midas's crouch_toggle on L3 now, below).
+	BOOL aiming = (g.leftTrigger.value > trig) || g.leftShoulder.isPressed;
 	if (aiming) {
 		pad.button &= (uint16_t)~(GE_CONT_E | GE_CONT_D);
+		// Round 59, Austin's design (and Midas's own Standard layout:
+		// zoom_in = lefty-, zoom_out = lefty+): while aiming, the left stick's
+		// Y zooms by how far it is pushed and does not walk or duck; X keeps
+		// leaning. Only the sniper rifle and the camera zoom (bondview2.c).
+		acts.zoomIn  = MAX(0.0f, ly);
+		acts.zoomOut = MAX(0.0f, -ly);
+		pad.stickY = 0;
 	}
 
 	// GoldenEye's own button roles under 1.1/HONEY, from the decomp rather
@@ -405,10 +452,12 @@ static void geMapGamepad(GCExtendedGamepad *g, double dt, GEPad *outPad, GELook 
 	if (g.buttonA.isPressed)          pad.button |= GE_CONT_B;      // use / action / reload
 	if (g.buttonY.isPressed)          pad.button |= GE_CONT_A;      // next weapon
 	if (g.rightShoulder.isPressed)    pad.button |= GE_CONT_A;      // next weapon
-	// Crouch is not a bit: it is aim mode + C-down held
-	// (bondview2.c:5431-5433). B/circle sends both, which is exactly what a
-	// player does on a real N64 pad.
-	if (g.buttonB.isPressed)          pad.button |= GE_CONT_R | GE_CONT_D;
+	// Round 59: Midas Port actions, as Midas's own Standard layout binds them
+	// for every real controller. B/circle used to send R + C-down (the N64
+	// crouch chord), which forced aim mode with every crouch.
+	if (g.buttonB.isPressed)          acts.nextInv = 1.0f;          // next gadget
+	if (g.buttonX.isPressed)          acts.reload = 1.0f;           // reload
+	if (g.leftThumbstickButton.isPressed) acts.crouchToggle = 1.0f; // crouch / stand
 	if (g.buttonMenu.isPressed)       pad.button |= GE_CONT_START;
 	if (g.buttonOptions.isPressed)    pad.button |= GE_CONT_START;
 
@@ -425,9 +474,11 @@ static void geMapGamepad(GCExtendedGamepad *g, double dt, GEPad *outPad, GELook 
 	// D-041: anything a human hand does and a pad asleep in a drawer does not.
 	*moved = pad.button != 0 || pad.stickX != 0 || pad.stickY != 0
 	         || lx != 0.0f || ly != 0.0f || rx != 0.0f || ry != 0.0f
-	         || g.leftTrigger.value > trig || g.rightTrigger.value > trig;
+	         || g.leftTrigger.value > trig || g.rightTrigger.value > trig
+	         || acts.nextInv > 0.0f || acts.reload > 0.0f || acts.crouchToggle > 0.0f;
 	*outPad = pad;
 	*outLook = look;
+	*outActs = acts;
 }
 
 + (void)pollWithDelta:(double)dt
@@ -459,6 +510,7 @@ static void geMapGamepad(GCExtendedGamepad *g, double dt, GEPad *outPad, GELook 
 			for (int i = 1; i < GE_SLOTS; i++) {
 				[GEInput setPad:(GEPad){0, 0, 0} forPort:i];
 			}
+			geHostPortActionClear(kActSrcPad, -1);
 		}
 		GELog(@"[pad] %@", sdlOwned
 		      ? @"SDL has the controller open: GEController stops publishing (report only)"
@@ -478,8 +530,9 @@ static void geMapGamepad(GCExtendedGamepad *g, double dt, GEPad *outPad, GELook 
 		}
 		GEPad pad;
 		GELook look;
+		GEPadActs acts;
 		BOOL moved = NO;
-		geMapGamepad(g, dt, &pad, &look, &moved);
+		geMapGamepad(g, dt, &pad, &look, &acts, &moved);
 		if (sdlOwned) {
 			if (i == 0 && !GEInput.padSeenInput && moved) {
 				GEInput.padSeenInput = YES;
@@ -503,6 +556,7 @@ static void geMapGamepad(GCExtendedGamepad *g, double dt, GEPad *outPad, GELook 
 			os_unfair_lock_unlock(&sLock);
 			continue;
 		}
+		geApplyActs(i, &acts);   // round 59: player i+1's own Port actions
 		if (i > 0) {
 			// Controllers 2-4: a port each, nothing merged (D-234).
 			[GEInput setPad:pad forPort:i];
@@ -571,6 +625,8 @@ static void geVpadApply(GCExtendedGamepad *g, NSString *buttons, float lx, float
 	[g.leftTrigger setValue:[b containsObject:@"l2"] ? 1.0f : 0.0f];
 	[g.rightTrigger setValue:[b containsObject:@"r2"] ? 1.0f : 0.0f];
 	[g.buttonMenu setValue:[b containsObject:@"menu"] ? 1.0f : 0.0f];
+	[g.leftThumbstickButton setValue:[b containsObject:@"l3"] ? 1.0f : 0.0f];   // round 59
+	[g.rightThumbstickButton setValue:[b containsObject:@"r3"] ? 1.0f : 0.0f];
 	float dx = ([b containsObject:@"right"] ? 1.0f : 0.0f) - ([b containsObject:@"left"] ? 1.0f : 0.0f);
 	float dy = ([b containsObject:@"up"] ? 1.0f : 0.0f) - ([b containsObject:@"down"] ? 1.0f : 0.0f);
 	[g.dpad setValueForXAxis:dx yAxis:dy];
@@ -583,7 +639,7 @@ static void geVpadApply(GCExtendedGamepad *g, NSString *buttons, float lx, float
 	// vpad <n>                 virtual mode with n (0..4) controllers; 0 = back to real ones
 	// vpad drop <k> | add <k>  disconnect / reconnect virtual controller k (1-based)
 	// vpad set <k> <buttons|none> <lx> <ly> <rx> <ry> [secs]
-	//                           buttons: a,b,x,y,l1,r1,l2,r2,menu,up,down,left,right
+	//                           buttons: a,b,x,y,l1,r1,l2,r2,l3,r3,menu,up,down,left,right
 	if (w.count >= 2 && [w[1] isEqualToString:@"set"] && w.count >= 8) {
 		NSInteger k = w[2].integerValue;
 		if (k < 1 || k > (NSInteger)sVirtual.count) {

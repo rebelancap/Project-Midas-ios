@@ -43,28 +43,35 @@
 //                                            skips the activate test for that
 //                                            press — which is the one thing a
 //                                            bare second B could never do.
-//   CROUCH  L3                      R+C-down there is no crouch bit: crouchDown
-//                                            is `insightaimmode &&
-//                                            (D_JPAD|D_CBUTTONS)`
-//                                            (bondview2.c:5431-5433) — crouching
-//                                            in GoldenEye REQUIRES aim mode.
-//                                            Sending both bits is exactly what
-//                                            a player does on a real pad.
+//   CROUCH  L3                      Midas    Round 59 (docs/port-ios/79): Midas's
+//                                   crouch_  own Port action (port/src/joy_port.c
+//                                   toggle   PORTACT_CROUCH_TOGGLE): a tap squats,
+//                                            the next stands, and aim mode is NOT
+//                                            touched. Until round 59 this sent
+//                                            R + C-down, the N64 chord
+//                                            (bondview2.c, crouchDown is
+//                                            `insightaimmode && (D_JPAD|D_CBUTTONS)`),
+//                                            so every crouch also brought up the
+//                                            aim cursor (a 1.0.0 user's report).
+//                                            The N64 chord itself still works.
 //   SWAP    Y                       A        invButtons: a TAP of A is "next
 //                                            weapon". Renamed WEAPON.
-//   GADGET  B                       —        DROPPED. The remaster cycles watch
-//                                            gadgets with a button; on the N64
-//                                            the watch IS the pause screen, so
-//                                            START already reaches every gadget.
+//   GADGET  B                       Midas    Round 59: BACK, at bean's slot to the
+//                                   next_    digit. Midas's Port action cycles the
+//                                   inven-   whitelisted in-hand gadgets (joy_port.c
+//                                   tory     sInvScrollItems) and draws the gadget
+//                                            name in the HUD, which is what the
+//                                            remaster's button does. Holding it
+//                                            and tapping FIRE steps BACK one
+//                                            (Midas's [input] shoot_next_prev).
+//                                            The watch (START) still reaches every
+//                                            item.
 //   START   Start                   Start    pause / Q watch
 //   FIRE_L  R-trigger (aim only)     Z       KEPT — see +leftFire.
 //
-// The one dropped slot left (bean's GADGET at 0.8918,0.3800) stays EMPTY
-// rather than bound to something invented. GE's one remaining in-game action,
-// "previous weapon", is the combo hold-A-and-tap-Z, which cannot be one circle
-// without fighting the fire interlock at bondview2.c:5482-5484 (holding A
-// suppresses Z). The layout editor can put something there when there is
-// something to put.
+// While AIM is held the floating stick zooms (Y: up = zoom_in, down =
+// zoom_out, as a level) and leans (X), and does not walk; see GETouchOverlay.m
+// -publish. Only the sniper rifle and the camera zoom (bondview2.c).
 static const GETouchButton kBaked[] = {
 	{ "FIRE",   "scope",                     GE_CONT_G,
 	  0.8609f, 0.7548f, 46.0f, "Z - fire" },
@@ -79,25 +86,32 @@ static const GETouchButton kBaked[] = {
 	// instead (port/src/hostinput.c, engine/src/game/lv.c).
 	{ "RELOAD", "arrow.triangle.2.circlepath", GE_CONT_B,
 	  0.8521f, 0.5119f, 28.0f, "B - reload only" },
-	{ "CROUCH", "arrow.down",                GE_CONT_R | GE_CONT_D,
-	  0.9443f, 0.9175f, 28.0f, "R + C-down - crouch" },
+	// Round 59: Midas's crouch_toggle, no aim mode (see the table above).
+	{ "CROUCH", "arrow.down",                0,
+	  0.9443f, 0.9175f, 28.0f, "crouch / stand (toggle)", "crouch_toggle" },
 	{ "WEAPON", "arrow.left.arrow.right",    GE_CONT_A,
 	  0.9554f, 0.7214f, 28.0f, "A - next weapon" },
 	// The hamburger, not a pause bar: the same button is START in the front
 	// end, and it is the family's established "menu" mark.
 	{ "START",  "line.3.horizontal",         GE_CONT_START,
 	  0.9400f, 0.0992f, 20.0f, "Start - pause / Q watch" },
+	// Round 59: bean's GADGET slot and glyph, to the digit (rexglue 0090).
+	// LAST in the table on purpose: FIRE must stay [0] (+leftFire mirrors
+	// it), and a saved layout from 1.0.0 has no "GADGET" key, so it simply
+	// lands here at its default (overrides are per name; see +reload).
+	{ "GADGET", "briefcase.fill",            0,
+	  0.8918f, 0.3800f, 28.0f, "next gadget (hold + FIRE = back)", "next_inventory" },
 };
 static const NSInteger kCount = (NSInteger)(sizeof(kBaked) / sizeof(kBaked[0]));
 
 // A second FIRE under the LEFT thumb while AIM is held. In aim mode the stick
-// half of the screen is idle and the right thumb is busy holding AIM and
-// dragging the crosshair, so the left thumb has nothing to do and no way to
-// shoot. Exists only while AIM is down, is never persisted, and sits where
+// only zooms and leans (round 59) and the right thumb is busy holding AIM and
+// dragging the crosshair, so the left thumb has no way to shoot. It wins the
+// hit test over the stick inside its own circle only. Exists only while AIM is down, is never persisted, and sits where
 // FIRE would be if the screen were mirrored — so a custom FIRE placement
 // carries across for free (recomp 0090/0091).
 static const GETouchButton kLeftFire = {
-	"FIRE_L", "scope", GE_CONT_G, 0.0f, 0.0f, 46.0f, "Z - fire (left hand, aim mode)"
+	"FIRE_L", "scope", GE_CONT_G, 0.0f, 0.0f, 46.0f, "Z - fire (left hand, aim mode)", NULL
 };
 
 static GETouchButton sLive[sizeof(kBaked) / sizeof(kBaked[0])];

@@ -1,47 +1,61 @@
 // GEController.h — GCController -> OSContPad, controller-first.
 //
-// THE CONTROL SCHEME (DECISIONS D-024). GoldenEye's own N64 default is style
-// 1.1 "Honey": the analog stick turns and walks, the C buttons sidestep and
-// look, R aims, Z fires. That is a fine 1997 scheme and it is not what anyone
-// picks up a modern pad expecting, so this port ships the twin-stick layout
-// the GoldenEye XBLA remaster and our own recomp port use:
+// WHO MAPS A REAL CONTROLLER (round 9c, R9B-1; restated in round 59). Midas
+// opens every real controller through SDL's MFi backend (port/src/input_pc.c)
+// and maps it with its OWN layout table, tools/gamecontrollerdefault.txt
+// (bundled; a new pad seeds "Xbox Standard", or "PlayStation Standard" /
+// "Switch Standard"). While SDL holds any pad, this file only REPORTS (the
+// overlay's auto mode). So the table a player actually gets on iOS and
+// visionOS is Midas's Xbox Standard layout:
 //
-//   left stick  X  sidestep       -> C-left / C-right   (GE's own strafe)
-//               Y  forward/back   -> analog stick Y
-//   right stick    look           -> ABSOLUTE view degrees, continuous
-//                                    (geHostLookAdd; C-up/C-down only as the
-//                                    fallback when absolute look is off)
-//   R2             fire           -> Z trigger
-//   L2 / L1        aim            -> R trigger (GE's L and R are one button)
-//   A              use / action   -> B    (GE's "action" bit is also reload)
-//   B              crouch         -> R + C-down held (GE has no crouch bit)
-//   Y / R1         next weapon    -> A    (a tap; hold A + tap Z = previous)
-//   D-pad          D-pad          -> D-pad, which GE aliases to the C buttons:
+//   left stick     move / strafe; WHILE AIMING: Y zooms (up = in, down = out,
+//                  sniper rifle and camera only; with a gun that cannot zoom,
+//                  pulling back ducks, Midas's 2.x rule), X leans
+//   right stick    look (Settings -> Controller sliders scale it, round 57)
+//   RT / R2        fire                LT / L2   aim
+//   A / cross      use / accept        B / circle   next gadget / back
+//   X / square     reload              Y / triangle next weapon
+//   LB / L1        Classic Mode toggle and watch page left
+//   RB / R1        detonate remote mines and watch page right
+//   L3             crouch / stand (toggle; no aim mode)
+//   D-pad          digital move        Menu / Start  pause
+//   (Midas's in-game Controls menu can switch a pad to the "Pro" layout or
+//   rebind it.)
+//
+// THE SHELL'S OWN MAPPING (geMapGamepad) serves only the pads SDL does not
+// hold, which in practice is the dev bridge's virtual pads (D-235). It is
+// the twin-stick scheme of D-024, kept close to the table above so a gate
+// that drives it exercises the same actions:
+//
+//   left stick  X  sidestep / lean      Y  forward/back; while aiming: zoom
+//                                          (Midas zoom_in / zoom_out levels)
+//   right stick    look            -> ABSOLUTE view degrees, continuous
+//   R2             fire            -> Z trigger
+//   L2 / L1        aim             -> R trigger (GE's L and R are one button)
+//   A              use / action    -> B    (GE's "action" bit is also reload)
+//   B              next gadget     -> Midas next_inventory (round 59; until
+//                                     then R + C-down, a crouch that forced
+//                                     aim mode)
+//   X              reload          -> Midas reload (round 59; was unbound)
+//   L3             crouch / stand  -> Midas crouch_toggle (round 59)
+//   Y / R1         next weapon     -> A    (a tap; hold A + tap Z = previous)
+//   D-pad          D-pad           -> D-pad, which GE aliases to the C buttons:
 //                                    sidestep/look in hip fire, lean/crouch/
 //                                    zoom while aiming
-//   Menu / Options pause          -> Start
+//   Menu / Options pause           -> Start
 //
 // The face buttons do NOT map straight through, and getting that wrong is
 // what shipped in 0.0.0.1: GoldenEye's A is the INVENTORY button (tap = next
 // weapon) and its B is "action", which opens doors and reloads
 // (src/game/bondview2.c:5231-5243, 5400-5410; the in-game options table says
-// the same at src/game/options.c:148). Mapping the pad's A to GE's A made
-// "USE" cycle the weapon and "RELOAD" open the door. GE's L is not a separate
-// action at all — aimButtons is `L_TRIG | R_TRIG` and the two are
-// indistinguishable (bondview2.c:5241).
-//
-// X/square is deliberately UNBOUND. bean puts RELOAD there and GoldenEye has
-// no separate reload bit; the remaining in-game action, "previous weapon", is
-// the combo hold-A-and-tap-Z, which cannot be one button without fighting the
-// fire interlock at bondview2.c:5482-5484.
+// the same at src/game/options.c:148). GE's L is not a separate action at
+// all: aimButtons is `L_TRIG | R_TRIG` (bondview2.c:5241).
 //
 // Why the right stick does not simply become the N64 stick: in hip fire GE
 // reads pitch ONLY from the digital C-up/C-down buttons, so a stick mapped
-// there gives one speed of vertical look and nothing in between — the
-// complaint that made port/src/input.c grow its D194 absolute-aim path for the
-// mouse. Degrees straight to the camera is the same fix for a thumbstick, and
-// it is the only mapping under which look speed is a number a settings row can
-// mean something about (degrees per second) rather than a stick count.
+// there gives one speed of vertical look and nothing in between. Degrees
+// straight to the camera is the fix, and it is the only mapping under which
+// look speed is a number a settings row can mean something about.
 //
 // LOCAL MULTIPLAYER (round 29d, D-233/D-234): up to four controllers, one
 // per player, in connection order. Controller 1 and the touch overlay BOTH

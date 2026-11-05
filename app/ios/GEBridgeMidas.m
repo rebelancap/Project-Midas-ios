@@ -44,12 +44,7 @@ GE_WEAK void geHostCombatStats(unsigned int *bulletHits, unsigned int *bloodStai
 }
 GE_WEAK void geHostAmmo(int *magRight, int *magLeft) { if (magRight) *magRight = -1; if (magLeft) *magLeft = -1; }
 GE_WEAK void geHostAllGunsRequest(void) {}
-GE_WEAK void geHostAimState(int *aiming, int *weapon, float *sniperZoom, float *fovy,
-                            float *sway, int *crouch, unsigned int *zoomPolls)
-{
-	if (aiming) *aiming = 0; if (weapon) *weapon = 0; if (sniperZoom) *sniperZoom = 0;
-	if (fovy) *fovy = 0; if (sway) *sway = 0; if (crouch) *crouch = 0; if (zoomPolls) *zoomPolls = 0;
-}
+/* Round 59: geHostAimState is real (port/apple/hostinput.c). */
 GE_WEAK void geHostAimAtNearestChr(void) {}
 GE_WEAK void geHostTeleportRequest(int mask, float x, float y, float z, float theta, float verta)
 {

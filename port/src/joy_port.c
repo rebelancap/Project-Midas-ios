@@ -695,6 +695,19 @@ f32 portJoyPortLevel(s32 act)
         }
     }
 #endif
+#ifdef GE_IOS
+    {   /* iOS shell (port/apple/hostinput.c, round 59): the touch stick's
+         * zoom while aiming is a magnitude too, and its press also lands in
+         * sHeld, so ask for the level before the 1.0 below */
+        extern f32 geHostPortActionLevel(s32 pad, s32 act);
+        const f32 h = geHostPortActionLevel(pad, act);
+
+        if (h > 0.0f)
+        {
+            return h;
+        }
+    }
+#endif
     return sHeld[pad][act] ? 1.0f : 0.0f;
 }
 

@@ -577,6 +577,23 @@ static void portEquipTick(void)
         return;
     }
     bondinvAddInvItem((ITEM_IDS) item);
+    /* round 59 (docs/port-ios/79): "17,40,38" also puts the items after the
+     * first in the inventory (gadget-cycle and zoom tests); the first is the
+     * one in the hand */
+    while (e[i] == ',')
+    {
+        s32 more = 0;
+
+        for (i++; e[i] >= '0' && e[i] <= '9'; i++)
+        {
+            more = more * 10 + (e[i] - '0');
+        }
+        if (more > ITEM_UNARMED && more < ITEM_IDS_MAX)
+        {
+            bondinvAddInvItem((ITEM_IDS) more);
+            printf("ge: GE_EQUIP: item %d in the inventory\n", (int) more);
+        }
+    }
     set_max_ammo_for_cur_player();
     currentPlayerEquipWeaponWrapper(GUNRIGHT, (ITEM_IDS) item);
     printf("ge: GE_EQUIP: item %d in the right hand\n", (int) item);

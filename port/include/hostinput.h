@@ -93,6 +93,21 @@ int  geHostMpPlayer(int i, float *x, float *y, float *z, float *theta,
 void geHostReloadOnlySet(int on);
 int  geHostReloadOnly(void);
 
+/* Round 59 (docs/port-ios/79): Midas Port actions (port/src/joy_port.c) from
+ * the shell, per pad. geHostPortActionFind maps a midas.ini action name
+ * ("crouch_toggle", "next_inventory", "zoom_in", ...) to its index, -1 if
+ * unknown. geHostPortActionSet holds action `act` on pad `pad` at `level`
+ * (0 = up, 0..1 = a magnitude for zoom_in / zoom_out, 1 = a button) for
+ * source `src` (0 = touch overlay, 1 = the shell's controller mapping);
+ * sources compose by max, and every held action is pressed into the Port
+ * suite once per pad poll. geHostPortActionClear(src, pad) drops one
+ * source's actions on one pad (-1 = every pad). Safe from any thread. */
+int  geHostPortActionFind(const char *name);
+void geHostPortActionSet(int src, int pad, int act, float level);
+void geHostPortActionClear(int src, int pad);
+/* Player 1 is in aim mode (racy word read; 0 without a player). */
+int  geHostPlayerAiming(void);
+
 /* Accumulate an absolute view-angle delta in DEGREES (yaw +right, pitch
  * +down). Drained and applied once per tick. Lock-free. */
 void geHostLookAdd(float yawDeg, float pitchDeg);

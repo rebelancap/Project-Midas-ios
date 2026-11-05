@@ -49,6 +49,11 @@ typedef struct {
 	CGFloat     unitY;   ///< centre, as a fraction of the FULL view's height
 	CGFloat     radius;  ///< points at Touch.ButtonScale = 1
 	const char *action;  ///< what it does in GoldenEye, for the settings page
+	/// Round 59: a Midas Port action (port/src/joy_port.c, the midas.ini
+	/// [controls] name) held while the button is down, or NULL. CROUCH is
+	/// `crouch_toggle` and GADGET `next_inventory`: Midas's own actions,
+	/// pressed through port/apple/hostinput.c geHostPortActionSet.
+	const char *portAction;
 } GETouchButton;
 
 @interface GETouchLayout : NSObject

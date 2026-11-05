@@ -112,14 +112,20 @@ Files app, separate from the game data.
 
 ## Controls
 
-- **Game controllers**: any MFi / Xbox / PlayStation controller. Project
-  Midas's local split-screen multiplayer works with **one controller per
-  player**.
+- **Game controllers**: any MFi / Xbox / PlayStation controller, with
+  Project Midas's own layout: right trigger fire, left trigger aim, A use,
+  B next gadget, X reload, Y next weapon, left-stick click crouch. While
+  aiming, the left stick zooms the sniper rifle and camera (up / down) and
+  leans (left / right). Project Midas's local split-screen multiplayer works
+  with **one controller per player**.
 - **Touch controls** appear automatically when no controller is connected
   (Auto / On / Off): a move stick on the left, drag on the right to look, and
-  buttons for FIRE, AIM, USE, RELOAD and the rest. Button opacity, haptics,
-  stick dead zone and curve are adjustable, and **Customize layout…** moves
-  and resizes the buttons.
+  buttons for FIRE, AIM, USE, RELOAD, WEAPON, CROUCH (tap to crouch, tap
+  again to stand) and GADGET (cycles your gadgets; hold it and tap FIRE to
+  go back). While AIM is held, the stick zooms (up / down) and leans
+  (left / right) instead of walking. Button opacity, haptics, stick dead zone
+  and curve are adjustable, and **Customize layout…** moves and resizes the
+  buttons.
 
 ## Settings
 
