@@ -43,6 +43,7 @@
 #include "beanmodel.h"      /* Midas round 22 (R16-2): the mid-level rebuild */
 #include "beanchr.h"
 #include "beanprefetch.h"
+#include "beansky.h"         /* Midas round 61 (doc 81): XBLA sky domes */
 #include "xblaimport.h"     /* Midas round 22b (R22-9): xblaImportState() */
 #include "hdmesh.h"   /* Route B: G_HDMESH_EXT (D-120) */
 #include "bondconstants.h"
@@ -5658,6 +5659,26 @@ void beanStageSetEye(f32 x, f32 y, f32 z)
     eyeSet = 1;
 }
 
+/* Midas round 61 (doc 81, beansky.c): the eye the backdrop is placed round, in
+ * world units (the player's model position until bondview sets it), and the
+ * level's GoldenEye key ("dam", "sevx", "run"; NULL for an unpaired level). */
+int beanStageEyeWorld(f32 out[3])
+{
+    if (!g_CurrentPlayer) {
+        return 0;
+    }
+    for (s32 k = 0; k < 3; k++) {
+        out[k] = eyeSet ? eyeWorld[k] : g_CurrentPlayer->current_model_pos.f[k];
+    }
+    return 1;
+}
+
+const char *beanStageLevelKey(void)
+{
+    const struct stagerow *row = levelRow();
+    return row ? row->key : NULL;
+}
+
 int beanStageDrawsEveryRoom(void)
 {
     return cfgModels && cfgEveryRoom && served && numServed > 0 && !nodrawEnv();
@@ -6001,6 +6022,7 @@ void beanStageLevelLoaded(void)
     coldSyncNext = 0;
     coldSwapIn = 0;
     retireServed();
+    beanSkyLevelReset();   /* Midas round 61: the last level's dome goes with its pictures */
     tried = 0;
     levelFrames = 0;
     memset(&audit, 0, sizeof(audit));

@@ -91,9 +91,9 @@ Both are found in the gear menu under **Settings → Textures**.
   `584108A9/000D0000/`), or the unpacked folder. The app copies it into
   **Files → Project Midas → xbla** and decodes it once, with progress shown in
   the row. **GoldenEye XBLA graphics** then switches the remaster's art on or
-  off, including its own fonts and HUD icons. **Remove imported XBLA** deletes
-  the decoded textures and the app's copy (it asks first; your original is not
-  touched).
+  off, including its own fonts, HUD icons and the sky domes on Dam, Surface
+  and Runway. **Remove imported XBLA** deletes the decoded textures and the
+  app's copy (it asks first; your original is not touched).
 - **Texture packs.** Packs live in **Files → Project Midas → texturepacks**,
   one folder each, and are chosen under **Texture pack**. Without an XBLA copy,
   the community **GoldenEye 007 HD** pack (by intermissionfb and GhostlyDark)

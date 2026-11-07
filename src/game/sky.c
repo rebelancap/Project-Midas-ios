@@ -30,6 +30,7 @@
 #ifdef PORT
 #include "dyn.h"
 #include "floatvtx.h" /* D-189: G_FLOATVTX_EXT */
+#include "beansky.h" /* Midas round 61 (doc 81): XBLA sky domes */
 #endif
 
 #define SKYABS(val) (val >= 0.0f ? (val) : -(val))
@@ -549,10 +550,54 @@ Gfx *skyRender(Gfx *gdl)
     f32 scale;
     bool sp430;
     struct CurrentEnvironmentRecord *env;
+#ifdef PORT
+    s32 portDome = FALSE;
+#endif
 
     scale = get_room_data_float1() / 30.0f;
     sp430 = FALSE;
     env = fogGetCurrentEnvironmentp();
+
+#ifdef PORT
+    /* Midas round 61 (doc 81, GitHub issue #1): on Dam, Surface and Runway
+     * with Video.XblaModels the release's own sky dome (beansky.c) replaces
+     * the cloud plane, as GoldenEye XBLA draws it over the daylit backdrop.
+     * Under it the view is filled with the level's sky colour (as a level
+     * with no clouds is); the water below the horizon is still GoldenEye's
+     * (drawn below), the cloud plane is not. */
+    if (beanSkyWanted())
+    {
+        gDPPipeSync(gdl++);
+        gDPSetCycleType(gdl++, G_CYC_FILL);
+        gdl = viSetFillColor(gdl, env->Red, env->Green, env->Blue);
+        gDPSetRenderMode(gdl++, G_RM_NOOP, G_RM_NOOP2);
+        if (getPlayerCount() == 1)
+        {
+            gSPAspectSpanBeginEXT(gdl);   /* D-052: the backdrop spans the window */
+            gDPFillRectangle(gdl++, viGetViewLeft(), viGetViewTop(),
+                    viGetViewLeft() + viGetViewWidth() - 1,
+                    viGetViewTop() + viGetViewHeight() - 1);
+            gSPAspectSpanEndEXT(gdl);
+        }
+        else
+        {
+            PORT_HUD_ANCHOR(gdl, PORT_HUD_ANCHOR_SPAN);
+            gDPFillRectangle(gdl++,
+                    g_CurrentPlayer->viewleft, g_CurrentPlayer->viewtop,
+                    (g_CurrentPlayer->viewleft + g_CurrentPlayer->viewx) - 1,
+                    (g_CurrentPlayer->viewtop + g_CurrentPlayer->viewy) - 1);
+            PORT_HUD_ANCHOR_OFF(gdl);
+        }
+        gDPPipeSync(gdl++);
+        gdl = beanSkyRender(gdl);
+        portDome = TRUE;
+
+        if (!env->Clouds || !env->IsWater)
+        {
+            return gdl;
+        }
+    }
+#endif
 
 #ifdef PORT
     if (getenv("GE_D176")) {
@@ -1304,6 +1349,13 @@ Gfx *skyRender(Gfx *gdl)
 #endif
         }
     }
+
+#ifdef PORT
+    if (portDome)
+    {
+        return gdl;   /* round 61: the water is drawn; the dome is the sky above it */
+    }
+#endif
 
     switch ((sp538 << 3) | (sp534 << 2) | (sp530 << 1) | sp52c)
     {

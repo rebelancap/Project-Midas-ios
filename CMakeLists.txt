@@ -449,9 +449,10 @@ if(NOT GE_HOST32)
     # Round 14: beanmodel.c and beangun.c (XBLA steps 4.2/4.3) likewise (both
     # #error on a transitive mema.h/memp.h too).
     # Round 15: beanchr.c and beanprefetch.c (XBLA step 4.4) likewise.
+    # Midas round 61 (doc 81): beansky.c (the release's sky domes) likewise.
     foreach(_xbla xblaimport.c x360.c beantex.c dxt.c pngread.c pngwrite.c
                   xblaconfig.c xbla_keys.c xblacli.c texpack.c beanmesh.c beanstage.c
-                  beanmodel.c beangun.c beanchr.c beanprefetch.c xblafont.c)
+                  beanmodel.c beangun.c beanchr.c beanprefetch.c xblafont.c beansky.c)
         set(_xbla_path "${CMAKE_SOURCE_DIR}/port/apple/${_xbla}")
         set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_xbla_path}")
         file(STRINGS "${_xbla_path}" _xbla_hits REGEX "^[ \t]*#[ \t]*include[ \t]*[<\"]([^>\"]*/)?mem[ap]\\.h[>\"]")

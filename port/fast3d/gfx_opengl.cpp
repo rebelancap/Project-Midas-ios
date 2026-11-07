@@ -1174,6 +1174,52 @@ static bool gl_border_clamp_ok(void) {
 }
 #endif
 
+/* Round 62 (doc 82, GitHub #2 "Line Mode cheat doesn't work"): Line Mode's
+ * coverage picture reads the level framebuffer per sample, so its colour
+ * target has to be a multisample TEXTURE. glTexImage2DMultisample is desktop
+ * GL 3.2 and the ES 3.0 loader (gladLoadGLES2Loader) never resolves it, so on
+ * iOS / visionOS the target was always a renderbuffer and the VI pass fell
+ * back to the plain resolve without a word. ANGLE-Metal offers the same thing
+ * as GL_ANGLE_texture_multisample (glTexStorage2DMultisampleANGLE, sampler2DMS
+ * in ESSL 3.00 under `#extension GL_ANGLE_texture_multisample`). Immutable
+ * storage: a resize deletes the texture and makes a new one. The Mac (desktop
+ * GL, glTexImage2DMultisample) never takes this path. */
+#ifdef GE_GL_ANGLE
+typedef void (APIENTRYP GeTexStorage2DMultisampleANGLE)(GLenum, GLsizei, GLenum, GLsizei, GLsizei, GLboolean);
+static GeTexStorage2DMultisampleANGLE gl_tex_storage_ms_angle = NULL;
+static bool gl_angle_ms_tex(void) {
+    static int ok = -1;
+    if (ok >= 0) return ok != 0;
+    ok = 0;
+    bool ext = gl_has_extension("GL_ANGLE_texture_multisample");
+    if (!ext) {
+        typedef void (*ReqExt)(const char*);
+        ReqExt req = (ReqExt)geAngleGetProcAddress("glRequestExtensionANGLE");
+        if (req != NULL) {
+            req("GL_ANGLE_texture_multisample");
+            while (glGetError() != GL_NO_ERROR) { /* a refused request is not the game's error */ }
+            ext = gl_has_extension("GL_ANGLE_texture_multisample");
+        }
+    }
+    if (ext) {
+        gl_tex_storage_ms_angle = (GeTexStorage2DMultisampleANGLE)geAngleGetProcAddress("glTexStorage2DMultisampleANGLE");
+    }
+    ok = (ext && gl_tex_storage_ms_angle != NULL) ? 1 : 0;
+    sysLogPrintf(LOG_NOTE, "GL: ANGLE_texture_multisample: %s", ok ? "yes (Line Mode coverage)" :
+                 ext ? "no entry point (Line Mode draws depth edges)" : "no (Line Mode draws depth edges)");
+    return ok != 0;
+}
+#endif
+/* A multisample colour TEXTURE can be made on this context */
+static bool gl_ms_tex_ok(void) {
+    if (glTexImage2DMultisample != NULL) return true;
+#ifdef GE_GL_ANGLE
+    return gl_angle_ms_tex();
+#else
+    return false;
+#endif
+}
+
 static uint32_t gfx_cm_to_opengl(uint32_t val) {
     switch (val) {
         case 0x10: /* GE_TX_BORDER (gfx_pc.cpp): a grown font glyph - outside the
@@ -1926,6 +1972,7 @@ static int gfx_opengl_create_framebuffer() {
     return i;
 }
 
+extern "C" uint32_t gfx_line_mode; /* gfx_pc.cpp: the Line Mode cheat is on this frame */
 static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, uint32_t height, uint32_t msaa_level,
                                                      bool opengl_invert_y, bool render_target, bool has_depth_buffer,
                                                      bool can_extract_depth) {
@@ -1951,7 +1998,7 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
         if (msaa_cap < 0) {
             GLint s = 0;
             glGetIntegerv(GL_MAX_SAMPLES, &s);
-            if (glTexImage2DMultisample != NULL) {
+            if (gl_ms_tex_ok()) {   /* GL_MAX_COLOR_TEXTURE_SAMPLES_ANGLE is the same enum */
                 GLint t = 0;
                 glGetIntegerv(GL_MAX_COLOR_TEXTURE_SAMPLES, &t);
                 if (t > 0 && t < s) {
@@ -1971,8 +2018,11 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
 
         if (fb_id != 0) {
             /* GE N64 AA: the VI resolve reads samples, so the multisampled colour
-             * target is a texture while gfx_n64_aa is set (a renderbuffer otherwise) */
-            const bool want_tex = msaa_level > 1 && gfx_n64_aa != 0 && glTexImage2DMultisample != NULL && msaa_tex_ok;
+             * target is a texture while gfx_n64_aa is set (a renderbuffer otherwise).
+             * Round 62: on ES (ANGLE) only while Line Mode is on, so N64 AA /
+             * Classic Mode keep the plain resolve they have always had there. */
+            const bool want_tex = msaa_level > 1 && gfx_n64_aa != 0 && msaa_tex_ok && (!gl_es || gfx_line_mode != 0) &&
+                                  gl_ms_tex_ok();
             if (fb.width != width || fb.height != height || fb.msaa_level != msaa_level || fb.msaa_is_texture != want_tex) {
                 realloc = true;
                 if (msaa_level <= 1) {
@@ -1981,11 +2031,25 @@ static void gfx_opengl_update_framebuffer_parameters(int fb_id, uint32_t width, 
                     glBindTexture(GL_TEXTURE_2D, 0);
                     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.clrbuf, 0);
                 } else if (want_tex) {
+#ifdef GE_GL_ANGLE
+                    if (glTexImage2DMultisample == NULL) {
+                        /* round 62: immutable storage - a new texture per allocation */
+                        if (fb.clrtex_msaa != 0) {
+                            glDeleteTextures(1, &fb.clrtex_msaa);
+                            fb.clrtex_msaa = 0;
+                        }
+                        glGenTextures(1, &fb.clrtex_msaa);
+                        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, fb.clrtex_msaa);
+                        gl_tex_storage_ms_angle(GL_TEXTURE_2D_MULTISAMPLE, (GLsizei)msaa_level, GL_RGBA8, width, height, GL_TRUE);
+                    } else
+#endif
+                    {
                     if (fb.clrtex_msaa == 0) {
                         glGenTextures(1, &fb.clrtex_msaa);
                     }
                     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, fb.clrtex_msaa);
                     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, msaa_level, GL_RGB8, width, height, GL_TRUE);
+                    }
                     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
                     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, fb.clrtex_msaa, 0);
                 } else {
@@ -4277,14 +4341,21 @@ extern "C" void gfx_opengl_upscale_end(void) {
 static bool vi_init(void) {
     if (vi_prog[0] != 0) return true;
     if (vi_failed) return false;
-    if (glTexImage2DMultisample == NULL || glGenVertexArrays == NULL) {
+    if (!gl_ms_tex_ok() || glGenVertexArrays == NULL) {
         sysLogPrintf(LOG_WARNING, "N64 AA: multisample textures / VAOs unavailable on this GL - plain MSAA resolve instead");
         vi_failed = true;
         return false;
     }
     char hdr[256];
-    snprintf(hdr, sizeof(hdr), "#version %s\n%s#extension GL_ARB_texture_multisample : enable\n",
-             gl_glsl_version_str, gl_es ? "precision mediump float;\n" : "");
+    if (gl_es) {
+        /* round 62: ESSL wants every #extension before the first token, and
+         * sampler2DMS has no default precision */
+        snprintf(hdr, sizeof(hdr), "#version %s\n#extension GL_ANGLE_texture_multisample : require\n"
+                 "precision highp float;\nprecision highp int;\nprecision highp sampler2DMS;\n", gl_glsl_version_str);
+    } else {
+        snprintf(hdr, sizeof(hdr), "#version %s\n%s#extension GL_ARB_texture_multisample : enable\n",
+                 gl_glsl_version_str, gl_es ? "precision mediump float;\n" : "");
+    }
     std::string vs = std::string(hdr) +
         "in vec2 aPos;\n"
         "void main() { gl_Position = vec4(aPos, 0.0, 1.0); }\n";
@@ -4443,6 +4514,135 @@ static float vi_strength(void) {
     return s;
 }
 
+#ifdef GE_GL_ANGLE
+/* Round 62 (doc 82): Line Mode where ANGLE has no multisample textures (the
+ * iOS / visionOS simulators: ANGLE-Metal offers GL_ANGLE_texture_multisample
+ * only on a GPU with programmable sample positions). No sample can be read,
+ * so the coverage picture is drawn from the level's depth instead: the
+ * multisample depth is resolved into a texture and every pixel where the
+ * window depth is not affine (a plane's window depth is affine in screen
+ * space) is darkened - silhouettes and creases, i.e. the polygon edges - on
+ * white. Drawn without depth (the sky, the FP gun, the HUD) stays white.
+ * GE_LINEMODE_EDGE = the relative second difference that reads as a full line
+ * (default 0.004); GE_LINEMODE_GAIN scales it as on the sample path. */
+static GLuint le_prog = 0, le_vao = 0, le_vbo = 0, le_zfbo = 0, le_ztex = 0, le_ofbo = 0, le_otex = 0;
+static GLint le_u_z = -1, le_u_size = -1, le_u_edge = -1;
+static uint32_t le_w = 0, le_h = 0;
+static bool le_failed = false;
+
+static bool le_init(void) {
+    if (le_prog != 0) return true;
+    if (le_failed || !gl_es) return false;
+    static const char* vs =
+        "#version 300 es\n"
+        "in vec2 aPos;\n"
+        "void main() { gl_Position = vec4(aPos, 0.0, 1.0); }\n";
+    static const char* fs =
+        "#version 300 es\n"
+        "precision highp float;\nprecision highp int;\nprecision highp sampler2D;\n"
+        "uniform sampler2D uZ;\n"
+        "uniform ivec2 uSize;\n"
+        "uniform float uEdge;\n"
+        "out vec4 outColor;\n"
+        "float d(ivec2 q) { return 1.0 - texelFetch(uZ, clamp(q, ivec2(0), uSize - ivec2(1)), 0).r; }\n"
+        "void main() {\n"
+        "    ivec2 p = ivec2(gl_FragCoord.xy);\n"
+        "    float c = d(p), l = d(p + ivec2(-1, 0)), r = d(p + ivec2(1, 0));\n"
+        "    float b = d(p + ivec2(0, -1)), u = d(p + ivec2(0, 1));\n"
+        "    float m = max(c, max(max(l, r), max(b, u)));\n"
+        "    float e = (m > 1.0e-7) ? max(abs(l + r - 2.0 * c), abs(b + u - 2.0 * c)) / m : 0.0;\n"
+        "    float v = clamp(1.0 - e / uEdge, 0.0, 1.0);\n"
+        "    outColor = vec4(v, v, v, 1.0);\n"
+        "}\n";
+    le_prog = vi_compile(vs, fs);
+    if (le_prog == 0) {
+        le_failed = true;
+        sysLogPrintf(LOG_WARNING, "GL: Line Mode depth-edge program failed - Line Mode shows the plain picture");
+        return false;
+    }
+    le_u_z = glGetUniformLocation(le_prog, "uZ");
+    le_u_size = glGetUniformLocation(le_prog, "uSize");
+    le_u_edge = glGetUniformLocation(le_prog, "uEdge");
+    static const float tri[6] = { -1.0f, -1.0f, 3.0f, -1.0f, -1.0f, 3.0f };
+    glGenBuffers(1, &le_vbo);
+    glGenVertexArrays(1, &le_vao);
+    glBindVertexArray(le_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, le_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(tri), tri, GL_STATIC_DRAW);
+    GLint loc = glGetAttribLocation(le_prog, "aPos");
+    if (loc < 0) loc = 0;
+    glEnableVertexAttribArray(loc);
+    glVertexAttribPointer(loc, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glBindVertexArray(opengl_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, opengl_vbo);
+    glGenTextures(1, &le_ztex);
+    glGenTextures(1, &le_otex);
+    glGenFramebuffers(1, &le_zfbo);
+    glGenFramebuffers(1, &le_ofbo);
+    sysLogPrintf(LOG_NOTE, "GL: Line Mode: depth-edge picture ready (no multisample textures on this GL)");
+    return true;
+}
+
+/* resolve src's depth, draw the edge picture; returns the framebuffer holding
+ * it (src's size), or 0 when the depth framebuffer is refused */
+static GLuint le_draw(const Framebuffer& src) {
+    if (src.width == 0 || src.height == 0) {
+        return 0;   /* a minimised or mid-resize frame: not a failure, try again next frame */
+    }
+    if (le_w != src.width || le_h != src.height) {
+        glBindTexture(GL_TEXTURE_2D, le_ztex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, src.width, src.height, 0, GL_DEPTH_STENCIL,
+                     GL_UNSIGNED_INT_24_8, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindFramebuffer(GL_FRAMEBUFFER, le_zfbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, le_ztex, 0);
+        glBindTexture(GL_TEXTURE_2D, le_otex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, src.width, src.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindFramebuffer(GL_FRAMEBUFFER, le_ofbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, le_otex, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        le_w = src.width;
+        le_h = src.height;
+        glBindFramebuffer(GL_FRAMEBUFFER, le_zfbo);
+        const GLenum st = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (st != GL_FRAMEBUFFER_COMPLETE) {
+            sysLogPrintf(LOG_WARNING, "GL: Line Mode depth framebuffer rejected (0x%x) - Line Mode shows the plain picture",
+                         (unsigned)st);
+            le_failed = true;
+            return 0;
+        }
+    }
+    /* the depth, one value per pixel (a multisample source resolves) */
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, src.fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, le_zfbo);
+    glBlitFramebuffer(0, 0, (GLint)src.width, (GLint)src.height, 0, 0, (GLint)src.width, (GLint)src.height,
+                      GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    static float edge = -1.0f;
+    if (edge < 0.0f) {
+        const char* e = getenv("GE_LINEMODE_EDGE");
+        const char* g = getenv("GE_LINEMODE_GAIN");
+        edge = (e != NULL && atof(e) > 0.0) ? (float)atof(e) : 0.004f;
+        if (g != NULL && atof(g) > 0.0) edge /= (float)atof(g);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, le_ofbo);
+    glBindVertexArray(le_vao);
+    glUseProgram(le_prog);
+    glBindTexture(GL_TEXTURE_2D, le_ztex);
+    glUniform1i(le_u_z, 0);
+    glUniform2i(le_u_size, (GLint)src.width, (GLint)src.height);
+    glUniform1f(le_u_edge, edge);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    return le_ofbo;
+}
+#endif
+
 static void gfx_opengl_resolve_n64_aa(int fb_dst, int fb_src) {
     if (!gfx_framebuffers_enabled || fb_src <= 0 || fb_src >= (int)framebuffers.size() ||
         fb_dst < 0 || fb_dst >= (int)framebuffers.size()) {
@@ -4450,7 +4650,14 @@ static void gfx_opengl_resolve_n64_aa(int fb_dst, int fb_src) {
     }
     Framebuffer& src = framebuffers[fb_src];
     Framebuffer& dst = framebuffers[fb_dst];
-    if (src.msaa_level <= 1 || !src.msaa_is_texture || !vi_init()) { /* attached, not merely allocated: the renderbuffer arm keeps the old texture */
+#ifdef GE_GL_ANGLE
+    /* round 62: Line Mode with no samples to read -> the depth-edge picture */
+    const bool edges = gfx_line_mode != 0 && src.has_depth_buffer &&
+                       (src.msaa_level <= 1 || !src.msaa_is_texture || !vi_init()) && le_init();
+#else
+    const bool edges = false;
+#endif
+    if (!edges && (src.msaa_level <= 1 || !src.msaa_is_texture || !vi_init())) { /* attached, not merely allocated: the renderbuffer arm keeps the old texture */
         if (src.msaa_level > 1 && (src.width != dst.width || src.height != dst.height)) {
             /* A multisample read framebuffer cannot blit to a rect of a
              * different size (GL_INVALID_OPERATION; the picture went black on
@@ -4503,6 +4710,15 @@ static void gfx_opengl_resolve_n64_aa(int fb_dst, int fb_src) {
     glDisable(GL_SCISSOR_TEST);
     glDisable(GL_CULL_FACE);
     glDepthMask(GL_FALSE);
+    GLuint present_fbo = 0;
+#ifdef GE_GL_ANGLE
+    if (edges) {
+        glViewport(0, 0, (GLsizei)src.width, (GLsizei)src.height);
+        glActiveTexture(GL_TEXTURE0);
+        present_fbo = le_draw(src);   /* 0 once, if its framebuffer is refused: that frame is not presented */
+    } else
+#endif
+    { /* the sample passes (not re-indented, round 62) */
     vi_size(src.width, src.height);
     glViewport(0, 0, (GLsizei)src.width, (GLsizei)src.height);
     glBindVertexArray(vi_vao);
@@ -4536,7 +4752,7 @@ static void gfx_opengl_resolve_n64_aa(int fb_dst, int fb_src) {
     }
     glDrawArrays(GL_TRIANGLES, 0, 3);
     /* pass 3 (optional): the NTSC composite signal (fs4 in vi_init) */
-    GLuint present_fbo = vi_fbo[1];
+    present_fbo = vi_fbo[1];
     static int nocomp = -1;
     if (nocomp < 0) { const char* e = getenv("GE_NOCOMPOSITE"); nocomp = (e != NULL && e[0] != '0') ? 1 : 0; }
     if (gfx_composite && !nocomp && !gfx_line_mode && vi_prog[3] != 0) {   /* part of Classic Mode (video.c) */
@@ -4564,9 +4780,10 @@ static void gfx_opengl_resolve_n64_aa(int fb_dst, int fb_src) {
         glDrawArrays(GL_TRIANGLES, 0, 3);
         present_fbo = vi_fbo[2];
     }
+    }
     /* present: the soft resample to the destination */
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, present_fbo);
-    {
+    if (present_fbo != 0) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, present_fbo);
         /* GE_N64AA_SOFT=0 keeps the nearest present (chunky pixels, blended
          * edges); default = the VI's soft resample (bilinear) */
         static int soft = -1;

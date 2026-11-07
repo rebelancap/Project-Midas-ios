@@ -98,7 +98,10 @@ struct xblamaprow {
 /* 12 (Midas round 44, docs/port-ios/62-round44-remaining-icons.md): the remaining ammo icons
  * (golden gun, the three mine types, the tank shell) join hudRows[], magnified from the
  * release's same-size copies - a version-11 layer is redone once the same way. */
-#define XBLA_LAYER_VERSION 12
+/* 13 (Midas round 61, docs/port-ios/81-round61-xbla-sky-domes.md, GitHub issue #1): the
+ * release's sky domes for the three levels that draw them (beansky.c: new/skydome/surface, dam,
+ * runway; ~3.6 MB) join the raw copies - a version-12 layer is redone once the same way. */
+#define XBLA_LAYER_VERSION 13
 
 /* Tier C: files the importer copies byte for byte (not decoded) for
  * beanmesh.c/beanstage.c to read at a level's load. Paths are the release's
@@ -108,6 +111,11 @@ static const char *const rawWanted[] = {
 #include "beanpropfiles.h"
 #include "beangunfiles.h"
 #include "beanchrfiles.h"
+    /* Midas round 61 (doc 81): beansky.c's releaseSkyNames[]; the other eight of
+     * the release's eleven are the same placeholder picture and are not drawn */
+    "new/skydome/surface/default.bin",
+    "new/skydome/dam/default.bin",
+    "new/skydome/runway/default.bin",
 };
 #define NUM_RAW ((int)(sizeof(rawWanted) / sizeof(rawWanted[0])))
 

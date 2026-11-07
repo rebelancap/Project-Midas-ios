@@ -69,6 +69,10 @@ Gfx *beanStageRenderEveryRoom(Gfx *gdl, int xlu);
 /* The level's backdrop (Dam's far mountains), before the rooms. */
 Gfx *beanStageRenderBackdrop(Gfx *gdl);
 int beanStageHasBackdrop(void);
+/* Midas round 61 (doc 81, beansky.c): the eye the backdrop is drawn round
+ * (world units; 0 when there is no player) and the level's GoldenEye key. */
+int beanStageEyeWorld(f32 out[3]);
+const char *beanStageLevelKey(void);
 
 /* Host bytes of the built rooms (lists, vertices, stand-ins, matrices) and of
  * the pinned pictures. */

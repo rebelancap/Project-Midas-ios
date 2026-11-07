@@ -81,6 +81,8 @@ extern int  geHostTeleportInsideChr(void);   /* round 27b, D-164 */
 extern void geHostAimTarget(float *x, float *y, float *z);
 /* Round 17a: GE's own INVINCIBLE cheat, so a capture sweep survives Dam. */
 extern void geHostSetInvincible(int on);
+extern void set_debug_VisCVG_flag(int flag);   /* debugmenu_handler.c (s32) */
+extern int  get_debug_VisCVG_flag(void);
 extern int  geHostGetInvincible(void);
 extern float geHostAimResult(unsigned int *serial);
 extern void geHostPadStats(unsigned int *sets, unsigned int *edges, unsigned int *lastButton);
@@ -1018,7 +1020,16 @@ static NSString *geRestOfLine(NSString *line, NSUInteger skip)
 		geHostAllGunsRequest();
 		return @"cheat=allguns requested\n";
 	}
-	return @"error=usage cmd=cheat arg=\"invincible 0|1 | allguns\"\n";
+	/* Round 62 (doc 82): GE's LINE MODE cheat flag (cheat.c CHEAT_LINEMODE sets
+	   the same word), read by boss.c every frame -> gfx_set_line_mode. */
+	if (w.count >= 2 && [w[1] isEqualToString:@"linemode"]) {
+		if (w.count >= 3) {
+			set_debug_VisCVG_flag(w[2].intValue ? 1 : 0);
+		}
+		return [NSString stringWithFormat:@"cheat=linemode requested=%@ active=%d\n",
+		        w.count >= 3 ? w[2] : @"(read)", (int)get_debug_VisCVG_flag()];
+	}
+	return @"error=usage cmd=cheat arg=\"invincible 0|1 | allguns | linemode 0|1\"\n";
 }
 
 /* Round 20b. `teleport <x> <y> <z> [theta [verta]]` puts Bond on the floor

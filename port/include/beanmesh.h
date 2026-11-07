@@ -101,6 +101,8 @@ void beanLevelClose(struct beanlevel *level);
 void beanLevelInfo(const struct beanlevel *level, struct beanlevelinfo *out);
 /* The whole file as read (for the built-level cache's key). */
 const uint8_t *beanLevelFileBytes(const struct beanlevel *level, uint32_t *len);
+/* Midas round 61 (doc 81): override the sniffed UV scale (a sky file is 1/16384). */
+void beanLevelSetUvScale(struct beanlevel *level, float uvscale);
 
 /*
  * Every triangle of the level with the picture its material draws (-1 for

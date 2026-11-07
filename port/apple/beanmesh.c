@@ -894,6 +894,15 @@ void beanLevelInfo(const struct beanlevel *bm, struct beanlevelinfo *out)
     out->filebytes = bm->filelen;
 }
 
+/* Midas round 61 (doc 81): a sky file's UVs are sixteen-thousandths, not a
+ * level's shader scale (PD gebean.c gebeanSkyOpen() sets 16384 after the load) */
+void beanLevelSetUvScale(struct beanlevel *bm, float uvscale)
+{
+    if (bm && uvscale > 0.0f) {
+        bm->uvscale = uvscale;
+    }
+}
+
 /* the buffers any instancing record draws (its first copy is drawn
  * without one, where the tree was modelled) */
 static int levelTreeVbs(const struct beanlevel *bm, uint32_t *treevbs)
