@@ -314,6 +314,12 @@ struct LoadedTexture {
     uint32_t line_size_bytes;
     uint32_t tex_flags;
     struct RawTexMetadata raw_tex_metadata;
+    /* Issue #3 (Dam water): bytes per TMEM row AS LOADED - G_LOADBLOCK's dxt
+     * (words per row = ceil(2048 / dxt), 0 when dxt is 0) or 0 for a
+     * G_LOADTILE / mip-tile record. The RDP swaps the two 32-bit halves of
+     * every 64-bit word on odd rows, on load (by this pitch) and on fetch
+     * (by the tile's line); ge_upload_masked reproduces the mismatch. */
+    uint32_t load_row_bytes;
 };
 
 static struct RDP {
@@ -2261,9 +2267,47 @@ static void ge_upload_masked(uint8_t* rgba, uint32_t width, uint32_t height, int
                 }
             }
         }
+        /* Issue #3 (GitHub, Dam water). Rare's water shimmer (sub_GAME_7F09365C,
+         * image 1511 on Dam and Complex; the RGBA16 twin for Caverns is the
+         * importer arm above) LoadBlocks a 32x32 CI8 picture at 32 bytes a row
+         * (dxt 512) and then samples it through two tiles declared with a
+         * 16-byte line and 32-texel masks, cross-faded by PRIM_LOD_FRAC. On the
+         * console that reads each 32-texel row of the sampled space as two
+         * adjacent half-rows of the picture, with the RDP's odd-row word swap
+         * left standing on rows 1, 2 (mod 4): a texel-level zigzag that at N64
+         * density (a texel or two a pixel) is the water's shimmer. At the phone's
+         * 4-8x density the same bytes are a comb of 1-texel stripes whose two
+         * cross-faded copies (22.5 texels apart) cancel into flat bands - the
+         * reporter's "not rendering properly", and what the plain interleave
+         * below drew. When the loaded row is exactly the mask width (the picture
+         * was drawn at the mask size and the narrow line is the trick, not the
+         * layout) rebuild the picture as drawn, row by loaded row, so the
+         * cross-fade and the SetTileSize scroll animate a coherent ripple -
+         * the look the sibling port shows (its import never sees the line
+         * change). GE_WATERTMEM=1 keeps the console's bytes (interleave + swap)
+         * for A/B. 8- and 16-bit texels only. */
+        const uint32_t line_bytes = rdp.texture_tile[tile].line_size_bytes;
+        const uint32_t load_row = rdp.loaded_texture[rdp.texture_tile[tile].tmem].load_row_bytes;
+        const uint32_t bpt = rdp.texture_tile[tile].siz == G_IM_SIZ_8b ? 1u : (rdp.texture_tile[tile].siz == G_IM_SIZ_16b ? 2u : 0u);
+        static int tmem_mode = -1; /* 0 = the picture as drawn (default), 1 = console bytes */
+        if (tmem_mode < 0) { const char* e = getenv("GE_WATERTMEM"); tmem_mode = (e != NULL && e[0] == '1') ? 1 : 0; }
+        const bool shimmer = bpt != 0 && load_row != 0 && line_bytes != 0 && load_row != line_bytes
+                             && width * bpt == line_bytes && load_row == w * bpt && (uint64_t) load_row * h <= (uint64_t) n * bpt;
         for (uint32_t t = 0; t < h; t++) {
             for (uint32_t s2 = 0; s2 < w; s2++) {
-                const uint32_t src = (t * width + s2) % n;
+                uint32_t src;
+                if (shimmer && tmem_mode == 0) {
+                    src = (t * load_row + s2 * bpt) / bpt;           /* the picture, row by loaded row */
+                } else if (shimmer) {
+                    uint32_t a = t * line_bytes + s2 * bpt;          /* the TMEM byte the fetch addresses */
+                    const uint32_t r = a / load_row;                 /* the row that byte was loaded as */
+                    if (((r ^ t) & 1u) != 0u) {
+                        a ^= 4u;                                     /* the RDP's odd-row half-swap, left standing */
+                    }
+                    src = (a / bpt) % n;
+                } else {
+                    src = (t * width + s2) % n;
+                }
                 memcpy(wrapbuf + ((size_t) t * w + s2) * 4, rgba + (size_t) src * 4, 4);
             }
         }
@@ -7182,6 +7226,7 @@ static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t
     loaded_texture.tex_flags = rdp.texture_to_load.tex_flags;
     loaded_texture.raw_tex_metadata = rdp.texture_to_load.raw_tex_metadata;
     loaded_texture.addr = rdp.texture_to_load.addr;
+    loaded_texture.load_row_bytes = (dxt != 0) ? ((2048u + dxt - 1u) / dxt) * 8u : 0u; /* issue #3 */
 
     ge_tmem_register_block(rdp.texture_to_load.addr, rdp.texture_tile[tile].tmem, orig_size_bytes);
 
@@ -7230,6 +7275,7 @@ static void gfx_dp_load_tile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t 
     loaded_texture.tex_flags = rdp.texture_to_load.tex_flags;
     loaded_texture.raw_tex_metadata = rdp.texture_to_load.raw_tex_metadata;
     loaded_texture.addr = rdp.texture_to_load.addr + start_offset_bytes;
+    loaded_texture.load_row_bytes = 0; /* issue #3: a LoadTile lays rows out at the tile's own line */
 
     rdp.texture_tile[tile].uls = uls;
     rdp.texture_tile[tile].ult = ult;
